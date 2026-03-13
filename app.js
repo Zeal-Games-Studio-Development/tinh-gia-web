@@ -47,6 +47,14 @@ function setDensity(density) {
   );
 }
 
+function toggleAdvanced() {
+  const section = document.getElementById('advancedSection');
+  const arrow = document.getElementById('advancedArrow');
+  const isOpen = section.classList.toggle('open');
+  arrow.classList.toggle('open', isOpen);
+  localStorage.setItem('lts_advanced_open', isOpen ? '1' : '0');
+}
+
 function loadDisplayPreferences() {
   const theme = localStorage.getItem('lts_theme') || 'light';
   const layout = localStorage.getItem('lts_layout') || 'default';
@@ -62,6 +70,12 @@ function loadDisplayPreferences() {
   document.querySelectorAll('#densityToolbar .toolbar-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.density === density)
   );
+
+  // Restore advanced panel state
+  if (localStorage.getItem('lts_advanced_open') === '1') {
+    document.getElementById('advancedSection')?.classList.add('open');
+    document.getElementById('advancedArrow')?.classList.add('open');
+  }
 }
 
 // ══════════════════════════════════════════════
