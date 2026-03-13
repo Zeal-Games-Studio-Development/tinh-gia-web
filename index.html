@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hệ thống tính giá túi bao bì - CTY CP Lai Trường Sơn">
+  <title>LTS Pricing — Tính Giá Bao Bì</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">LTS <span>Pricing</span></div>
+  <div class="tabs" id="viewTabs">
+    <button class="tab active" data-view="sale" onclick="switchView('sale')">💰 Sale</button>
+    <button class="tab" data-view="manager" onclick="switchView('manager')">📊 Quản Lý</button>
+    <button class="tab" data-view="tech" onclick="switchView('tech')">⚙️ Kỹ Thuật</button>
+    <button class="tab" data-view="moq" onclick="switchView('moq')">📦 MOQ</button>
+    <button class="tab" data-view="history" onclick="switchView('history')">📋 Lịch Sử</button>
+  </div>
+  <div class="header-right">
+    <!-- Display Settings Toolbar -->
+    <div class="toolbar-group" id="layoutToolbar" title="Bố cục">
+      <button class="toolbar-btn active" data-layout="default" onclick="setLayout('default')">☰</button>
+      <button class="toolbar-btn" data-layout="stacked" onclick="setLayout('stacked')">▤</button>
+      <button class="toolbar-btn" data-layout="wide" onclick="setLayout('wide')">⬚</button>
+      <button class="toolbar-btn" data-layout="bento" onclick="setLayout('bento')">◫</button>
+    </div>
+    <div class="toolbar-group" id="densityToolbar" title="Mật độ hiển thị">
+      <button class="toolbar-btn" data-density="compact" onclick="setDensity('compact')">S</button>
+      <button class="toolbar-btn active" data-density="comfortable" onclick="setDensity('comfortable')">M</button>
+      <button class="toolbar-btn" data-density="spacious" onclick="setDensity('spacious')">L</button>
+    </div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Chuyển đổi Sáng/Tối"></button>
+    <button class="btn btn-sm btn-outline" onclick="window.print()">🖨️</button>
+    <button class="btn btn-sm btn-outline" onclick="exportResult()">📥 Xuất</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="main-grid">
+
+    <!-- ═══ LEFT: INPUT FORM ═══ -->
+    <div class="card" id="inputCard" style="position:sticky;top:64px;">
+      <div class="auto-calc-badge">
+        <div class="pulse-dot"></div>
+        Tự động tính khi thay đổi
+      </div>
+      <div class="card-title"><span class="icon">📝</span> Thông tin đơn hàng</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Khách hàng</label>
+          <input class="form-input" id="customer" placeholder="Tên khách hàng">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên hàng</label>
+          <input class="form-input" id="productName" placeholder="Tên sản phẩm">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Số lượng (túi)</label>
+          <input class="form-input calc-trigger" id="quantity" type="number" value="30000" min="1000" step="1000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số màu in</label>
+          <select class="form-select calc-trigger" id="numColors">
+            <option value="1">1 màu</option><option value="2">2 màu</option>
+            <option value="3">3 màu</option><option value="4" selected>4 màu</option>
+            <option value="5">5 màu</option><option value="6">6 màu</option>
+            <option value="7">7 màu</option><option value="8">8 màu</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="card-title" style="font-size:0.78rem"><span class="icon">🏗️</span> Cấu trúc màng</div>
+
+      <div class="structure-visual" id="structurePreview">
+        <div class="layer"><div class="layer-name">Lớp 1</div><div class="layer-thickness">—</div></div>
+        <div class="layer"><div class="layer-name">Lớp 2</div><div class="layer-thickness">—</div></div>
+        <div class="layer"><div class="layer-name">Lớp 3</div><div class="layer-thickness">—</div></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Lớp 1 — Ngoài (In)</label>
+        <select class="form-select calc-trigger" id="layer1"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lớp 2 — Giữa (Ghép 1) <span style="color:var(--dim)">[tùy chọn]</span></label>
+        <select class="form-select calc-trigger" id="layer2"><option value="">— Không sử dụng —</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lớp 3 — Trong (Ghép 2 / Seal)</label>
+        <select class="form-select calc-trigger" id="layer3"></select>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Khổ trãi (m)</label>
+          <input class="form-input calc-trigger" id="spreadWidth" type="number" value="0.53" step="0.01" min="0.05">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bước cắt (m)</label>
+          <input class="form-input calc-trigger" id="cutStep" type="number" value="0.145" step="0.001" min="0.05">
+        </div>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Nhũ/Mờ (đ)</label>
+          <select class="form-select calc-trigger" id="metallic">
+            <option value="0" selected>Không</option>
+            <option value="200">Nhũ +200</option>
+            <option value="400">Mờ +400</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phủ mực (%)</label>
+          <input class="form-input calc-trigger" id="coverage" type="number" value="100" min="10" max="100" step="10">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quai (gr)</label>
+          <input class="form-input calc-trigger" id="handleWeight" type="number" value="0" min="0" max="10" step="0.1">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-check">
+            <input type="checkbox" id="hasZipper" class="calc-trigger"> Có Zipper (378đ/m)
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Loại LN</label>
+          <select class="form-select calc-trigger" id="profitCol">
+            <option value="1">Túi thường (2 lớp)</option>
+            <option value="2" selected>Túi phức tạp</option>
+          </select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="card-title" style="font-size:0.78rem"><span class="icon">📦</span> Thùng & Vận chuyển</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Số túi / thùng</label>
+          <input class="form-input calc-trigger" id="bagsPerBox" type="number" value="1000" min="100" step="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Giá thùng (đ)</label>
+          <input class="form-input calc-trigger" id="boxPrice" type="number" value="18000" min="0" step="1000">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Giá VT (đ/km/tấn)</label>
+          <input class="form-input calc-trigger" id="shippingPerKm" type="number" value="5000" min="0" step="500">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Khoảng cách (km)</label>
+          <input class="form-input calc-trigger" id="shippingKm" type="number" value="200" min="0" step="10">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-group">
+        <label class="form-label">Hoa hồng (%)</label>
+        <input class="form-input calc-trigger" id="commission" type="number" value="0" min="0" max="10" step="0.5">
+      </div>
+
+      <div style="margin-top:14px">
+        <button class="btn btn-primary" onclick="doCalculate()">⚡ Tính Giá</button>
+      </div>
+
+      <div class="quick-actions">
+        <button class="btn btn-sm btn-outline" onclick="resetForm()">🔄 Reset</button>
+        <button class="btn btn-sm btn-outline" onclick="copyResult()">📋 Copy</button>
+      </div>
+    </div>
+
+    <!-- ═══ RIGHT: RESULT PANELS ═══ -->
+    <div id="resultArea">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">📦</div>
+        <p>Nhập thông tin đơn hàng và nhấn <strong>Tính Giá</strong> để xem kết quả</p>
+        <p style="margin-top:8px;font-size:0.78rem;color:var(--dim)">Hoặc thay đổi bất kỳ thông số — kết quả sẽ tự động cập nhật</p>
+      </div>
+
+      <!-- ══ SALE VIEW ══ -->
+      <div class="panel" id="panel-sale">
+        <div class="price-hero">
+          <div class="label">Giá đề xuất / túi</div>
+          <div class="value" id="s-price">—</div>
+          <div class="unit">(chưa VAT)</div>
+          <div class="sub" id="s-structure"></div>
+        </div>
+        <div class="chot-gia-row">
+          <div class="form-group">
+            <label class="form-label">Giá bán chốt (đ/túi)</label>
+            <input class="form-input" id="chotGia" type="number" placeholder="Nhập giá chốt..." style="border-color:var(--green);" oninput="analyzeChotGia()">
+          </div>
+          <button class="btn btn-sm btn-green" style="margin-bottom:0;height:40px;" onclick="saveChotGia()">✓ Lưu</button>
+        </div>
+        <div id="chotAnalysis"></div>
+        <div style="height:14px"></div>
+        <div class="stat-grid" id="s-stats"></div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title"><span class="icon">💰</span> Chi tiết giá bán / túi</div>
+          <ul class="breakdown-list" id="s-breakdown"></ul>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">🧾</span> Thông tin đơn hàng</div>
+          <ul class="breakdown-list" id="s-order-info"></ul>
+        </div>
+      </div>
+
+      <!-- ══ MANAGER VIEW ══ -->
+      <div class="panel" id="panel-manager">
+        <div class="stat-grid" id="m-stats"></div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title"><span class="icon">📊</span> Cơ cấu giá vốn sản xuất</div>
+          <div class="cost-bar" id="m-costbar"></div>
+          <div class="cost-legend" id="m-legend"></div>
+          <table class="data-table" id="m-cost-table" style="margin-top:14px"></table>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title"><span class="icon">📈</span> Phân tích lợi nhuận</div>
+          <ul class="breakdown-list" id="m-profit"></ul>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">💵</span> Chi phí phụ tổng</div>
+          <table class="data-table" id="m-extra-table"></table>
+        </div>
+      </div>
+
+      <!-- ══ TECH VIEW ══ -->
+      <div class="panel" id="panel-tech">
+        <div class="info-box">
+          <span class="icon">ℹ️</span>
+          Thông số kỹ thuật sản xuất dựa trên cấu trúc <strong id="t-structure"></strong>
+        </div>
+        <div class="stat-grid" id="t-stats"></div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title"><span class="icon">🏭</span> Thông số sản xuất từng công đoạn</div>
+          <table class="data-table" id="t-production-table"></table>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title"><span class="icon">📐</span> Thông số nguyên liệu</div>
+          <table class="data-table" id="t-material-table"></table>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">⚖️</span> Trọng lượng & Vận chuyển</div>
+          <ul class="breakdown-list" id="t-weight"></ul>
+        </div>
+      </div>
+
+      <!-- ══ MOQ VIEW ══ -->
+      <div class="panel" id="panel-moq">
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title"><span class="icon">📦</span> Bảng giá theo số lượng (MOQ)</div>
+          <div class="info-box">
+            <span class="icon">💡</span>
+            So sánh giá khi thay đổi số lượng đặt hàng. Dòng tô sáng là số lượng hiện tại.
+          </div>
+          <table class="moq-table" id="moq-table"></table>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">📉</span> Phân tích giá theo MOQ</div>
+          <ul class="breakdown-list" id="moq-analysis"></ul>
+        </div>
+      </div>
+
+      <!-- ══ BENTO VIEW ══ -->
+      <div class="panel" id="panel-bento">
+        <div id="bentoGrid"></div>
+      </div>
+
+      <!-- ══ HISTORY VIEW ══ -->
+      <div class="panel" id="panel-history">
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between">
+            <span><span class="icon">📋</span> Lịch sử tính giá</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-outline" onclick="exportHistory()">📥 Xuất CSV</button>
+              <button class="btn btn-sm btn-danger" onclick="if(confirm('Xóa toàn bộ lịch sử?')){clearHistory();renderHistory();}">🗑️ Xóa</button>
+            </div>
+          </div>
+          <div class="search-box">
+            <input type="text" id="historySearch" placeholder="Tìm kiếm theo tên, khách hàng, cấu trúc..." oninput="renderHistory()">
+          </div>
+          <div id="historyList"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
