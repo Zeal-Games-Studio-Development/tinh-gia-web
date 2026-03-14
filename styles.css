@@ -644,6 +644,83 @@ body {
 .form-check input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
 .divider { height: 1px; background: var(--border); margin: 14px 0; }
 
+/* ═══════════ OPTION GROUP (segmented buttons) ═══════════ */
+.option-group {
+  display: flex;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+}
+.option-btn {
+  flex: 1;
+  padding: 8px 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+  position: relative;
+}
+.option-btn:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: var(--border);
+}
+.option-btn:hover { color: var(--text); background: rgba(79,70,229,0.04); }
+.option-btn.active {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+}
+.option-btn.active::after { display: none; }
+.option-btn .option-sub {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+/* ═══════════ COMMISSION ROW ═══════════ */
+.commission-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.commission-row .form-input { flex: 1; }
+.commission-hint {
+  font-size: 0.72rem;
+  color: var(--accent2);
+  margin-top: 4px;
+  min-height: 16px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════ CYLINDER PREVIEW ═══════════ */
+.cylinder-preview {
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 8px 10px;
+  background: var(--surface2);
+  border-radius: 8px;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+.cylinder-preview .cyl-val {
+  font-weight: 700;
+  color: var(--accent);
+}
+
 /* ═══════════ BUTTONS ═══════════ */
 .btn {
   padding: 10px 20px;
@@ -813,8 +890,27 @@ body {
 .structure-visual .layer:nth-child(1) { background: linear-gradient(135deg, #4f46e5, #6366f1); }
 .structure-visual .layer:nth-child(2) { background: linear-gradient(135deg, #0891b2, #06b6d4); }
 .structure-visual .layer:nth-child(3) { background: linear-gradient(135deg, #d97706, #f59e0b); }
+.structure-visual .layer:nth-child(4) { background: linear-gradient(135deg, #059669, #34d399); }
 .structure-visual .layer-name { font-size: 0.72rem; opacity: 0.95; }
 .structure-visual .layer-thickness { font-size: 0.62rem; opacity: 0.75; }
+
+/* ═══════════ MIC ADJUST ═══════════ */
+.mic-adjust {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: rgba(79,70,229,0.04);
+  border: 1px solid rgba(79,70,229,0.12);
+  border-radius: 8px;
+  animation: fadeIn 0.25s ease;
+}
+[data-theme="dark"] .mic-adjust {
+  background: rgba(129,140,248,0.06);
+  border-color: rgba(129,140,248,0.15);
+}
+.mic-adjust .form-input {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
 
 /* ═══════════ INFO BOX ═══════════ */
 .info-box {

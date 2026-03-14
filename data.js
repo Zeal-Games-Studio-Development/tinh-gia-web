@@ -2,20 +2,20 @@
 // DATABASE NGUYÊN LIỆU - Lấy từ Data2023 sheet
 // ============================================================
 const MATERIALS = [
-  { id: 'PET', name: 'PET 12mic', density: 1.4, thickness: 12, pricePerKg: 34091, isPETorPA: true },
-  { id: 'PA', name: 'PA 15mic', density: 1.16, thickness: 15, pricePerKg: 70000, isPETorPA: true },
-  { id: 'MPET', name: 'MPET 12mic', density: 1.4, thickness: 12, pricePerKg: 40909, isPETorPA: false },
-  { id: 'CPP25', name: 'CPP 25mic', density: 0.92, thickness: 25, pricePerKg: 40909, isPETorPA: false },
-  { id: 'CPP50', name: 'CPP 50mic', density: 0.92, thickness: 50, pricePerKg: 40909, isPETorPA: false },
-  { id: 'LLDPE', name: 'PE/LLDPE 120mic', density: 0.925, thickness: 120, pricePerKg: 40000, isPETorPA: false },
-  { id: 'AL', name: 'Nhôm AL 6mic', density: 2.76, thickness: 6, pricePerKg: 110909, isPETorPA: false },
-  { id: 'BOPP18', name: 'BOPP 18mic', density: 0.91, thickness: 18, pricePerKg: 41364, isPETorPA: false },
-  { id: 'BOPP20', name: 'BOPP 20mic', density: 0.91, thickness: 20, pricePerKg: 41364, isPETorPA: false },
-  { id: 'BOPP30', name: 'BOPP 30mic', density: 0.91, thickness: 30, pricePerKg: 40000, isPETorPA: false },
-  { id: 'MattBOPP20', name: 'Matt BOPP 20mic', density: 0.88, thickness: 20, pricePerKg: 50000, isPETorPA: false },
-  { id: 'MangNgoc40', name: 'Màng ngọc 40mic', density: 0.604, thickness: 40, pricePerKg: 63636, isPETorPA: false },
-  { id: 'MangNgoc60', name: 'Màng ngọc 60mic', density: 0.604, thickness: 60, pricePerKg: 73000, isPETorPA: false },
-  { id: 'MCPP25', name: 'MCPP 25mic', density: 0.91, thickness: 25, pricePerKg: 49000, isPETorPA: false },
+  { id: 'PET', name: 'PET 12mic', density: 1.4, thickness: 12, pricePerKg: 34091, isPETorPA: true, rollLength: 6000 },
+  { id: 'PA', name: 'PA 15mic', density: 1.16, thickness: 15, pricePerKg: 70000, isPETorPA: true, rollLength: 6000 },
+  { id: 'MPET', name: 'MPET 12mic', density: 1.4, thickness: 12, pricePerKg: 40909, isPETorPA: false, rollLength: 6000 },
+  { id: 'CPP25', name: 'CPP 25mic', density: 0.92, thickness: 25, pricePerKg: 40909, isPETorPA: false, rollLength: 6000 },
+  { id: 'CPP50', name: 'CPP 50mic', density: 0.92, thickness: 50, pricePerKg: 40909, isPETorPA: false, rollLength: 6000 },
+  { id: 'LLDPE', name: 'LLDPE 120mic', density: 0.925, thickness: 120, pricePerKg: 40000, isPETorPA: false, adjustableMic: true, rollLength: 6000 },
+  { id: 'AL', name: 'Nhôm AL 6mic', density: 2.76, thickness: 6, pricePerKg: 110909, isPETorPA: false, rollLength: 6000 },
+  { id: 'BOPP18', name: 'BOPP 18mic', density: 0.91, thickness: 18, pricePerKg: 41364, isPETorPA: false, rollLength: 4000 },
+  { id: 'BOPP20', name: 'BOPP 20mic', density: 0.91, thickness: 20, pricePerKg: 41364, isPETorPA: false, rollLength: 4000 },
+  { id: 'BOPP30', name: 'BOPP 30mic', density: 0.91, thickness: 30, pricePerKg: 40000, isPETorPA: false, rollLength: 4000 },
+  { id: 'MattBOPP20', name: 'Matt BOPP 20mic', density: 0.88, thickness: 20, pricePerKg: 50000, isPETorPA: false, rollLength: 4000 },
+  { id: 'MangNgoc40', name: 'Màng ngọc 40mic', density: 0.604, thickness: 40, pricePerKg: 63636, isPETorPA: false, rollLength: 6000 },
+  { id: 'MangNgoc60', name: 'Màng ngọc 60mic', density: 0.604, thickness: 60, pricePerKg: 73000, isPETorPA: false, rollLength: 6000 },
+  { id: 'MCPP25', name: 'MCPP 25mic', density: 0.91, thickness: 25, pricePerKg: 49000, isPETorPA: false, rollLength: 6000 },
 ];
 
 // Tính giá VNĐ/m² = pricePerKg × thickness × density / 1000
