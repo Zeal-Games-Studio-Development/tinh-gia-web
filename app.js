@@ -1392,11 +1392,6 @@ function updateMaterialPrice(input) {
   const isChanged = m[field] !== defaultM[field];
   input.classList.toggle('changed', isChanged);
 
-  // Update material name to reflect new thickness
-  m.name = m.id.replace(/\d+/g, '') + ' ' + m.thickness + 'mic';
-  const nameCell = input.closest('tr').querySelector('.mat-name');
-  if (nameCell) nameCell.textContent = m.name;
-
   // Also update the layer dropdown options
   updateLayerDropdowns();
   saveMaterialConfig();
