@@ -213,8 +213,11 @@ function handleSubType() {
 function isOrderInfoComplete() {
   const productType = document.getElementById('productType').value;
   const qty = getFmtValue('quantity', 0);
+  const spreadWidth = parseFloat(document.getElementById('spreadWidth').value) || 0;
+  const cutStep = parseFloat(document.getElementById('cutStep').value) || 0;
+  const numColors = document.getElementById('numColors').value;
 
-  if (!productType || qty <= 0) return false;
+  if (!productType || qty <= 0 || spreadWidth <= 0 || cutStep <= 0 || numColors === '') return false;
 
   // Check sub-type based on product type
   if (productType === 'tui') {
@@ -309,6 +312,31 @@ function setupOptionGroups() {
   });
 }
 
+function autoCalcCylinder() {
+  const spreadWidth = parseFloat(document.getElementById('spreadWidth').value);
+  const cutStep = parseFloat(document.getElementById('cutStep').value);
+  
+  if (!isNaN(spreadWidth) && spreadWidth > 0) {
+    document.getElementById('cylLength').value = +(spreadWidth + 0.1).toFixed(3);
+  } else {
+    document.getElementById('cylLength').value = '';
+  }
+  
+  if (!isNaN(cutStep) && cutStep > 0) {
+    let n = 1;
+    // Tìm n sao cho cutStep * n >= 0.4
+    while (cutStep * n < 0.4) {
+      n++;
+    }
+    document.getElementById('cylCircum').value = +(cutStep * n).toFixed(3);
+  } else {
+    document.getElementById('cylCircum').value = '';
+  }
+  
+  // Also force preview update for cylinders if they're visible
+  updateCylinderPreview();
+}
+
 // ══════════════════════════════════════════════
 // STRUCTURE VISUAL PREVIEW
 // ══════════════════════════════════════════════
@@ -387,8 +415,8 @@ function gatherInput() {
     layer2Id: document.getElementById('layer2').value || null,
     layer3Id: document.getElementById('layer3').value || null,
     layer4Id: document.getElementById('layer4').value || null,
-    spreadWidth: parseFloat(document.getElementById('spreadWidth').value) || 0.53,
-    cutStep: parseFloat(document.getElementById('cutStep').value) || 0.145,
+    spreadWidth: parseFloat(document.getElementById('spreadWidth').value) || 0,
+    cutStep: parseFloat(document.getElementById('cutStep').value) || 0,
     metallicSurcharge: (document.getElementById('hasNhu').checked ? CONSTANTS.nhuPrice : 0)
       + (document.getElementById('hasMo').checked ? CONSTANTS.moPrice : 0),
     coverageRatio: (parseFloat(document.getElementById('coverage').value) || 100) / 100,
@@ -403,13 +431,13 @@ function gatherInput() {
       ? (parseFloat(document.getElementById('commission').value) || 0) : 0,
     commissionUnit: document.getElementById('commissionUnit').value,
     commissionInputValue: parseFloat(document.getElementById('commission').value) || 0,
-    bagsPerBox: getFmtValue('bagsPerBox', 1000),
-    boxPrice: getFmtValue('boxPrice', 18000),
-    shippingPerKm: getFmtValue('shippingPerKm', 5000),
-    shippingKm: parseInt(document.getElementById('shippingKm').value) || 200,
-    cylLength: parseFloat(document.getElementById('cylLength').value) || 0.63,
-    cylCircum: parseFloat(document.getElementById('cylCircum').value) || 0.4,
-    cylUnitPrice: getFmtValue('cylUnitPrice', 7300000),
+    bagsPerBox: getFmtValue('bagsPerBox', 0),
+    boxPrice: getFmtValue('boxPrice', 0),
+    shippingPerKm: getFmtValue('shippingPerKm', 0),
+    shippingKm: parseInt(document.getElementById('shippingKm').value) || 0,
+    cylLength: parseFloat(document.getElementById('cylLength').value) || 0,
+    cylCircum: parseFloat(document.getElementById('cylCircum').value) || 0,
+    cylUnitPrice: getFmtValue('cylUnitPrice', 0),
     micOverrides,
   };
 }
@@ -1245,31 +1273,31 @@ function resetForm() {
   document.getElementById('customer').value = '';
   document.getElementById('productName').value = '';
   document.getElementById('quantity').value = '';
-  document.getElementById('numColors').value = 4;
+  document.getElementById('numColors').value = '';
   document.getElementById('layer1').value = '';
   document.getElementById('layer2').value = '';
   document.getElementById('layer3').value = '';
   document.getElementById('layer4').value = '';
-  document.getElementById('spreadWidth').value = 0.53;
-  document.getElementById('cutStep').value = 0.145;
+  document.getElementById('spreadWidth').value = '';
+  document.getElementById('cutStep').value = '';
   document.getElementById('hasNhu').checked = false;
   document.getElementById('hasMo').checked = false;
-  document.getElementById('coverage').value = 100;
-  document.getElementById('handleWeight').value = 0;
+  document.getElementById('coverage').value = '';
+  document.getElementById('handleWeight').value = '';
   document.getElementById('hasZipper').checked = false;
   // Reset payment term to 30 days
   document.querySelectorAll('#paymentTermGroup .option-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('#paymentTermGroup .option-btn[data-value="30"]').classList.add('active');
-  document.getElementById('cylLength').value = 0.63;
-  document.getElementById('cylCircum').value = 0.4;
-  setFmtValue('cylUnitPrice', 7300000);
-  document.getElementById('commission').value = 0;
+  document.getElementById('cylLength').value = '';
+  document.getElementById('cylCircum').value = '';
+  setFmtValue('cylUnitPrice', CONSTANTS.cylinderPricePerUnit);
+  document.getElementById('commission').value = '';
   document.getElementById('commissionUnit').value = 'percent';
   document.getElementById('commissionHint').textContent = '';
-  setFmtValue('bagsPerBox', 1000);
-  setFmtValue('boxPrice', 18000);
-  setFmtValue('shippingPerKm', 5000);
-  document.getElementById('shippingKm').value = 200;
+  document.getElementById('bagsPerBox').value = '';
+  document.getElementById('boxPrice').value = '';
+  document.getElementById('shippingPerKm').value = '';
+  document.getElementById('shippingKm').value = '';
   document.getElementById('chotGia').value = '';
   document.getElementById('chotAnalysis').innerHTML = '';
   // Reset mic adjust inputs

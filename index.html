@@ -109,20 +109,21 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Khổ trãi (m)</label>
-            <input class="form-input calc-trigger" id="spreadWidth" type="number" value="0.53" step="0.01" min="0.05">
+            <input class="form-input calc-trigger" id="spreadWidth" type="number" value="" step="0.01" min="0.05" oninput="autoCalcCylinder()">
           </div>
           <div class="form-group">
             <label class="form-label">Bước cắt (m)</label>
-            <input class="form-input calc-trigger" id="cutStep" type="number" value="0.145" step="0.001" min="0.05">
+            <input class="form-input calc-trigger" id="cutStep" type="number" value="" step="0.001" min="0.05" oninput="autoCalcCylinder()">
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Số màu in</label>
           <select class="form-select calc-trigger" id="numColors">
+            <option value="" selected>— Chọn —</option>
             <option value="0">Không in</option>
             <option value="1">1 màu</option><option value="2">2 màu</option>
-            <option value="3">3 màu</option><option value="4" selected>4 màu</option>
+            <option value="3">3 màu</option><option value="4">4 màu</option>
             <option value="5">5 màu</option><option value="6">6 màu</option>
             <option value="7">7 màu</option><option value="8">8 màu</option>
           </select>
@@ -163,16 +164,7 @@
           </div>
         </div>
 
-        <div class="divider"></div>
 
-        <div class="form-group" style="margin-top:4px">
-          <label class="form-label">Ngày giải ngân</label>
-          <div class="option-group" id="paymentTermGroup">
-            <button type="button" class="option-btn" data-value="14" data-rate="0.001">14 ngày <span class="option-sub">(0.1%)</span></button>
-            <button type="button" class="option-btn active" data-value="30" data-rate="0.0025">30 ngày <span class="option-sub">(0.25%)</span></button>
-            <button type="button" class="option-btn" data-value="90" data-rate="0.0075">90 ngày <span class="option-sub">(0.75%)</span></button>
-          </div>
-        </div>
        
       <!-- ═══ COLLAPSIBLE ADVANCED SECTION ═══ -->
       <div class="advanced-toggle" id="advancedToggle" onclick="toggleAdvanced()">
@@ -184,11 +176,11 @@
         <div class="form-row-3">
           <div class="form-group">
             <label class="form-label">Phủ mực (%)</label>
-            <input type="number" class="form-input calc-trigger" id="coverage" value="100" min="0" max="100" step="1" placeholder="100">
+            <input type="number" class="form-input calc-trigger" id="coverage" value="" min="0" max="100" step="1" placeholder="100">
           </div>
           <div class="form-group">
             <label class="form-label">Quai (gr)</label>
-            <input class="form-input calc-trigger" id="handleWeight" type="number" value="0" min="0" max="10" step="0.1">
+            <input class="form-input calc-trigger" id="handleWeight" type="number" value="" min="0" max="10" step="0.1">
           </div>
         </div>
 
@@ -215,15 +207,15 @@
         <div class="form-row-3">
           <div class="form-group">
             <label class="form-label">Dài (m)</label>
-            <input class="form-input calc-trigger" id="cylLength" type="number" value="0.63" step="0.01" min="0.1">
+            <input class="form-input calc-trigger" id="cylLength" type="number" value="" step="0.01" min="0.1">
           </div>
           <div class="form-group">
             <label class="form-label">Chu vi (m)</label>
-            <input class="form-input calc-trigger" id="cylCircum" type="number" value="0.4" step="0.01" min="0.1">
+            <input class="form-input calc-trigger" id="cylCircum" type="number" value="" step="0.01" min="0.1">
           </div>
           <div class="form-group">
             <label class="form-label">Đơn giá (đ/m²)</label>
-            <input class="form-input calc-trigger" id="cylUnitPrice" type="text" inputmode="numeric" data-fmt="number" value="7.300.000">
+            <input class="form-input calc-trigger" id="cylUnitPrice" type="text" inputmode="numeric" data-fmt="number" value="">
           </div>
         </div>
         <div class="cylinder-preview" id="cylinderPreview"></div>
@@ -232,21 +224,31 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Túi/thùng</label>
-            <input class="form-input calc-trigger" id="bagsPerBox" type="text" inputmode="numeric" data-fmt="number" value="1.000">
+            <input class="form-input calc-trigger" id="bagsPerBox" type="text" inputmode="numeric" data-fmt="number" value="">
           </div>
           <div class="form-group">
             <label class="form-label">Giá thùng (đ)</label>
-            <input class="form-input calc-trigger" id="boxPrice" type="text" inputmode="numeric" data-fmt="number" value="18.000">
+            <input class="form-input calc-trigger" id="boxPrice" type="text" inputmode="numeric" data-fmt="number" value="">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Vận chuyển (Đ/Km)</label>
-            <input class="form-input calc-trigger" id="shippingPerKm" type="text" inputmode="numeric" data-fmt="number" value="5.000">
+            <input class="form-input calc-trigger" id="shippingPerKm" type="text" inputmode="numeric" data-fmt="number" value="">
           </div>
           <div class="form-group">
             <label class="form-label">Khoảng cách (km)</label>
-            <input class="form-input calc-trigger" id="shippingKm" type="number" value="200" min="0" step="10">
+            <input class="form-input calc-trigger" id="shippingKm" type="number" value="" min="0" step="10">
+          </div>
+        </div>
+
+        <div class="advanced-sub-title">⏳ Thanh toán</div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label">Ngày giải ngân</label>
+          <div class="option-group" id="paymentTermGroup">
+            <button type="button" class="option-btn" data-value="14" data-rate="0.001">14 ngày <span class="option-sub">(0.1%)</span></button>
+            <button type="button" class="option-btn active" data-value="30" data-rate="0.0025">30 ngày <span class="option-sub">(0.25%)</span></button>
+            <button type="button" class="option-btn" data-value="90" data-rate="0.0075">90 ngày <span class="option-sub">(0.75%)</span></button>
           </div>
         </div>
 
