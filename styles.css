@@ -597,7 +597,7 @@ body {
   margin-top: 0;
 }
 .advanced-section.open {
-  max-height: 600px;
+  max-height: 2000px;
   opacity: 1;
   padding: 12px 0 4px;
   margin-top: 4px;
@@ -744,6 +744,15 @@ body {
 }
 .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(79,70,229,0.4); }
 .btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled {
+  background: var(--surface2);
+  color: var(--dim);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.6;
+}
+.btn-primary:disabled:hover { transform: none; box-shadow: none; }
 .btn-sm { padding: 5px 12px; font-size: 0.78rem; border-radius: 8px; }
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
 .btn-outline:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,70,229,0.04); }
@@ -1043,6 +1052,125 @@ body {
   .data-table th, .data-table td { padding: 7px 6px; }
   .chot-gia-row { flex-direction: column; }
   .quick-actions { flex-direction: column; }
+}
+
+/* ═══════════ CONFIG TAB & PAGE ═══════════ */
+.tab-divider {
+  width: 1px; height: 24px; background: var(--border); margin: 0 4px; align-self: center;
+}
+.tab-config {
+  background: rgba(217,119,6,0.12) !important;
+  color: var(--orange) !important;
+  border: 1px solid rgba(217,119,6,0.25) !important;
+  font-weight: 600;
+}
+.tab-config.active, .tab-config:hover {
+  background: var(--orange) !important;
+  color: white !important;
+}
+
+/* Config Full Page */
+.config-page {
+  max-width: 960px; margin: 0 auto; padding: 24px 16px;
+}
+.config-page-inner { display: flex; flex-direction: column; gap: 20px; }
+.config-page-header {
+  text-align: center; padding: 28px 20px;
+  background: var(--grad); border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+}
+.config-page-header h2 {
+  color: white; font-size: 1.5rem; font-weight: 800; margin: 0 0 6px;
+}
+.config-page-subtitle {
+  color: rgba(255,255,255,0.8); font-size: 0.9rem; margin: 0;
+}
+.config-card {
+  padding: 20px 24px;
+}
+
+.config-section-title {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px; font-size: 1rem; font-weight: 700; color: var(--text);
+}
+.config-section-title span { display: flex; align-items: center; gap: 6px; }
+
+.config-table-wrap {
+  overflow-x: auto; border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.config-table {
+  width: 100%; border-collapse: collapse; font-size: 0.88rem;
+}
+.config-table th {
+  background: var(--surface2); font-weight: 600; color: var(--muted);
+  padding: 10px 12px; text-align: center; border-bottom: 2px solid var(--border);
+  font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.config-table td {
+  padding: 6px 10px; border-bottom: 1px solid var(--border);
+  text-align: center; vertical-align: middle;
+}
+.config-table tr:nth-child(even) { background: var(--table-stripe); }
+.config-table tr:hover { background: rgba(79,70,229,0.04); }
+
+.config-table .mat-name {
+  text-align: left; font-weight: 600; color: var(--text);
+}
+.config-table .mat-density {
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.config-table .mat-price-m2 {
+  font-weight: 700; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.config-table input.cfg-input {
+  width: 110px; padding: 5px 8px; border: 1.5px solid var(--border);
+  border-radius: 8px; background: var(--input-bg);
+  font-size: 0.88rem; text-align: right;
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.config-table input.cfg-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+}
+.config-table input.cfg-input.changed {
+  border-color: var(--orange);
+  background: rgba(217,119,6,0.06);
+}
+
+.config-note {
+  margin-top: 12px; font-size: 0.82rem; color: var(--muted);
+  padding: 10px 14px; border-radius: 10px;
+  background: var(--surface2); border-left: 3px solid var(--accent);
+}
+
+/* CPSX Grid */
+.config-cpsx-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+.config-cpsx-item {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.config-cpsx-item label {
+  font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em;
+}
+.config-cpsx-item input {
+  padding: 8px 12px; border: 1.5px solid var(--border);
+  border-radius: 10px; background: var(--input-bg);
+  font-size: 0.95rem; font-family: 'Inter', sans-serif;
+  color: var(--text); text-align: right;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.config-cpsx-item input:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
 }
 
 /* ═══════════ PRINT ═══════════ */

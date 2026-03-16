@@ -81,8 +81,19 @@ function calculate(input) {
   let lam3CostCPSX = 0, lam3CostMaterial = 0, lam3CPSX = 0;
   if (layer2) {
     lam3Width = cutWidth + 0.02;
-    const prevMeters = layer3 ? lam2Meters : lam1Meters;
-    const prevWaste = layer3 ? lam2Waste : lam1Waste;
+    // Chain: layer3 → layer4 → cut stage
+    let prevMeters, prevWaste;
+    if (layer3) {
+      prevMeters = lam2Meters;
+      prevWaste = lam2Waste;
+    } else if (layer4) {
+      prevMeters = lam1Meters;
+      prevWaste = lam1Waste;
+    } else {
+      // Only Layer1 + Layer2, no Layer3/4: base from cut stage
+      prevMeters = cutMeters;
+      prevWaste = cutWaste;
+    }
     lam3Meters = prevMeters + prevWaste;
     lam3Waste = lam3Meters / 3000 * 20 + 100;
     lam3CPSX = CONSTANTS.ghepCPSX;
@@ -100,18 +111,19 @@ function calculate(input) {
   const colorSetup = COLOR_SETUP[numColors] || 400;
   const printWaste = colorSetup + (printMeters / 6000 * 40)
     + (printMeters > 50000 ? printMeters / 50000 * 400 : 0);
-  const cpsxFactor = layer1.isPETorPA ? 135 : 120;
-  const printCPSX = numColors * cpsxFactor * coverageRatio
-    + CONSTANTS.baseCPSX + metallicSurcharge;
+  const inkPrice = layer1.inkPricePerColor || (layer1.isPETorPA ? 135 : 120);
+  const printCPSX = numColors * inkPrice * coverageRatio
+    + CONSTANTS.laborCost + metallicSurcharge;
   const printCostCPSX = printCPSX * (printWaste + printMeters) * printNLWidth;
   const printCostMaterial = layer1.pricePerM2 * (printWaste + printMeters) * printNLWidth;
   const printTotalCost = printCostCPSX + printCostMaterial;
 
   // ── 5. CPSX CẮT chi phí ──
   let cutCPSX;
-  if (bagArea < 0.07)      cutCPSX = 971 * 1.4;
-  else if (bagArea < 0.2)  cutCPSX = 971 * 1.2;
-  else                     cutCPSX = 971 * 0.8;
+  const cutBase = CONSTANTS.cutBase || 971;
+  if (bagArea < 0.07)      cutCPSX = cutBase * 1.4;
+  else if (bagArea < 0.2)  cutCPSX = cutBase * 1.2;
+  else                     cutCPSX = cutBase * 0.8;
   const cutCostCPSX = cutCPSX * (cutWaste + cutMeters) * cutWidth;
   const cutTotalCost = cutCostCPSX;
 
@@ -131,7 +143,17 @@ function calculate(input) {
   const totalThickness = layer1.thickness
     + (layer2 ? layer2.thickness : 0)
     + (layer3 ? layer3.thickness : 0)
-    + (layer4 ? layer4.thickness : 0) + cutWastePercent;
+    + (layer4 ? layer4.thickness : 0);
+
+  // Tổng tỉ trọng (g/m²)
+  // density lưu theo g/cm³ → g/m³ (×1.000.000)
+  // thickness lưu theo mic → m (÷1.000.000)
+  // g/m² = thickness(m) × density(g/m³) = (mic/1e6) × (g_cm3 × 1e6) = mic × g_cm3
+  const layerGSM = (thk, dens) => (thk / 1000000) * (dens * 1000000);
+  const totalGSM = layerGSM(layer1.thickness, layer1.density)
+    + (layer2 ? layerGSM(layer2.thickness, layer2.density) : 0)
+    + (layer3 ? layerGSM(layer3.thickness, layer3.density) : 0)
+    + (layer4 ? layerGSM(layer4.thickness, layer4.density) : 0);
 
   // Zipper
   const zipperTotal = hasZipper ? (cutMeters + cutWaste) * CONSTANTS.zipperPrice : 0;
@@ -144,8 +166,8 @@ function calculate(input) {
   const boxTotal = actualBoxPrice * numBoxes;
   const boxPerUnit = boxTotal / quantity;
 
-  // Tare (gr/cái)
-  const tareWeight = (bagArea * totalThickness) * 0.93 + handleWeight;
+  // Tare (gr/cái) = Tổng tỉ trọng (g/m²) × diện tích túi (m²)
+  const tareWeight = totalGSM * bagArea + handleWeight;
 
   // Vận chuyển
   const actualShippingPerKm = shippingPerKm || CONSTANTS.shippingPerKmDefault;
@@ -195,6 +217,7 @@ function calculate(input) {
     input,
     structureText,
     totalThickness,
+    totalGSM,
 
     // Kích thước
     bagArea, totalArea, printWidth, filmLength,

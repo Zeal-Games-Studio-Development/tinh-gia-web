@@ -22,6 +22,8 @@
     <button class="tab" data-view="moq" onclick="switchView('moq')">📦 MOQ</button>
     <button class="tab" data-view="history" onclick="switchView('history')">📋 Lịch Sử</button>
   </div>
+  <div class="tab-divider"></div>
+  <button class="tab tab-config" data-view="config" onclick="switchView('config')">🏭 Cơ Số SX</button>
   <div class="header-right">
     <!-- Display Settings Toolbar -->
     <div class="toolbar-group" id="layoutToolbar" title="Bố cục">
@@ -63,80 +65,116 @@
         </div>
       </div>
 
+      <div class="form-group">
+        <label class="form-label">Số lượng</label>
+        <input class="form-input calc-trigger" id="quantity" type="text" inputmode="numeric" data-fmt="number" value="30.000">
+      </div>
+
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Số lượng (túi)</label>
-          <input class="form-input calc-trigger" id="quantity" type="text" inputmode="numeric" data-fmt="number" value="30.000">
+          <label class="form-label">Loại sản phẩm</label>
+          <select class="form-select" id="productType" onchange="handleProductType()">
+            <option value="">— Chọn —</option>
+            <option value="tui">Túi</option>
+            <option value="mang">Màng</option>
+          </select>
         </div>
+        <div class="form-group" id="bagTypeGroup" style="display:none">
+          <label class="form-label">Loại túi</label>
+          <select class="form-select" id="bagType" onchange="handleSubType()">
+            <option value="">— Chọn —</option>
+            <option value="3bien">3 biên</option>
+            <option value="4bien">4 biên</option>
+            <option value="xephong_lech">Xếp hông dán lưng lệch</option>
+            <option value="xephong_giua">Xếp hông dán lưng giữa</option>
+            <option value="dayDung">Đáy đứng</option>
+            <option value="cutSeal">Cut seal</option>
+          </select>
+        </div>
+        <div class="form-group" id="filmTypeGroup" style="display:none">
+          <label class="form-label">Loại màng</label>
+          <select class="form-select" id="filmType" onchange="handleSubType()">
+            <option value="">— Chọn —</option>
+            <option value="mangIn">Màng in</option>
+            <option value="mangGhepKoIn">Màng ghép không in</option>
+            <option value="mangGhepCoIn">Màng ghép có in</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ═══ CẤU TRÚC — ẩn cho đến khi chọn loại sản phẩm ═══ -->
+      <div id="structureSection" style="display:none">
+        <div class="card-title" style="font-size:0.78rem"><span class="icon">🏗️</span> Cấu trúc</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Khổ trãi (m)</label>
+            <input class="form-input calc-trigger" id="spreadWidth" type="number" value="0.53" step="0.01" min="0.05">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bước cắt (m)</label>
+            <input class="form-input calc-trigger" id="cutStep" type="number" value="0.145" step="0.001" min="0.05">
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Số màu in</label>
           <select class="form-select calc-trigger" id="numColors">
+            <option value="0">Không in</option>
             <option value="1">1 màu</option><option value="2">2 màu</option>
             <option value="3">3 màu</option><option value="4" selected>4 màu</option>
             <option value="5">5 màu</option><option value="6">6 màu</option>
             <option value="7">7 màu</option><option value="8">8 màu</option>
           </select>
         </div>
-      </div>
 
-      <div class="divider"></div>
-      <div class="card-title" style="font-size:0.78rem"><span class="icon">🏗️</span> Cấu trúc màng</div>
+        <div class="structure-visual" id="structurePreview"></div>
 
-      <div class="structure-visual" id="structurePreview"></div>
-
-      <div class="form-group">
-        <label class="form-label">Lớp 1</label>
-        <select class="form-select calc-trigger" id="layer1"></select>
-        <div class="mic-adjust" id="micAdjust1" style="display:none">
-          <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
-          <input class="form-input calc-trigger" id="micLayer1" type="number" step="1" min="10" max="300">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Lớp 2</label>
-        <select class="form-select calc-trigger" id="layer2"><option value="">— Không —</option></select>
-        <div class="mic-adjust" id="micAdjust2" style="display:none">
-          <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
-          <input class="form-input calc-trigger" id="micLayer2" type="number" step="1" min="10" max="300">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Lớp 3</label>
-        <select class="form-select calc-trigger" id="layer3"><option value="">— Không —</option></select>
-        <div class="mic-adjust" id="micAdjust3" style="display:none">
-          <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
-          <input class="form-input calc-trigger" id="micLayer3" type="number" step="1" min="10" max="300">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Lớp 4</label>
-        <select class="form-select calc-trigger" id="layer4"><option value="">— Không —</option></select>
-        <div class="mic-adjust" id="micAdjust4" style="display:none">
-          <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
-          <input class="form-input calc-trigger" id="micLayer4" type="number" step="1" min="10" max="300">
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Khổ trãi (m)</label>
-          <input class="form-input calc-trigger" id="spreadWidth" type="number" value="0.53" step="0.01" min="0.05">
+          <label class="form-label">Lớp 1</label>
+          <select class="form-select calc-trigger" id="layer1"></select>
+          <div class="mic-adjust" id="micAdjust1" style="display:none">
+            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
+            <input class="form-input calc-trigger" id="micLayer1" type="number" step="1" min="10" max="300">
+          </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Bước cắt (m)</label>
-          <input class="form-input calc-trigger" id="cutStep" type="number" value="0.145" step="0.001" min="0.05">
+          <label class="form-label">Lớp 2</label>
+          <select class="form-select calc-trigger" id="layer2"><option value="">— Không —</option></select>
+          <div class="mic-adjust" id="micAdjust2" style="display:none">
+            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
+            <input class="form-input calc-trigger" id="micLayer2" type="number" step="1" min="10" max="300">
+          </div>
         </div>
-      </div>
-      <div class="form-group" style="margin-top:4px">
-        <label class="form-label">Ngày giải ngân</label>
-        <div class="option-group" id="paymentTermGroup">
-          <button type="button" class="option-btn" data-value="14" data-rate="0.001">14 ngày <span class="option-sub">(0.1%)</span></button>
-          <button type="button" class="option-btn active" data-value="30" data-rate="0.0025">30 ngày <span class="option-sub">(0.25%)</span></button>
-          <button type="button" class="option-btn" data-value="90" data-rate="0.0075">90 ngày <span class="option-sub">(0.75%)</span></button>
+        <div class="form-group">
+          <label class="form-label">Lớp 3</label>
+          <select class="form-select calc-trigger" id="layer3"><option value="">— Không —</option></select>
+          <div class="mic-adjust" id="micAdjust3" style="display:none">
+            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
+            <input class="form-input calc-trigger" id="micLayer3" type="number" step="1" min="10" max="300">
+          </div>
         </div>
-      </div>
+        <div class="form-group">
+          <label class="form-label">Lớp 4</label>
+          <select class="form-select calc-trigger" id="layer4"><option value="">— Không —</option></select>
+          <div class="mic-adjust" id="micAdjust4" style="display:none">
+            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
+            <input class="form-input calc-trigger" id="micLayer4" type="number" step="1" min="10" max="300">
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-group" style="margin-top:4px">
+          <label class="form-label">Ngày giải ngân</label>
+          <div class="option-group" id="paymentTermGroup">
+            <button type="button" class="option-btn" data-value="14" data-rate="0.001">14 ngày <span class="option-sub">(0.1%)</span></button>
+            <button type="button" class="option-btn active" data-value="30" data-rate="0.0025">30 ngày <span class="option-sub">(0.25%)</span></button>
+            <button type="button" class="option-btn" data-value="90" data-rate="0.0075">90 ngày <span class="option-sub">(0.75%)</span></button>
+          </div>
+        </div>
        
       <!-- ═══ COLLAPSIBLE ADVANCED SECTION ═══ -->
       <div class="advanced-toggle" id="advancedToggle" onclick="toggleAdvanced()">
@@ -147,23 +185,25 @@
       <div class="advanced-section" id="advancedSection">
         <div class="form-row-3">
           <div class="form-group">
-            <label class="form-label">Nhũ/Mờ</label>
-            <select class="form-select calc-trigger" id="metallic">
-              <option value="0" selected>0</option>
-              <option value="200">200</option>
-              <option value="400">400</option>
-            </select>
-          </div>
-          <div class="form-group">
             <label class="form-label">Phủ mực (%)</label>
-            <select class="form-select calc-trigger" id="coverage">
-              <option value="50">50%</option>
-              <option value="100" selected>100%</option>
-            </select>
+            <input type="number" class="form-input calc-trigger" id="coverage" value="100" min="0" max="100" step="1" placeholder="100">
           </div>
           <div class="form-group">
             <label class="form-label">Quai (gr)</label>
             <input class="form-input calc-trigger" id="handleWeight" type="number" value="0" min="0" max="10" step="0.1">
+          </div>
+        </div>
+
+        <div class="form-row-3" style="margin-top: 10px;">
+          <div class="form-group">
+            <label class="form-check">
+              <input type="checkbox" id="hasNhu" class="calc-trigger"> Nhũ
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-check">
+              <input type="checkbox" id="hasMo" class="calc-trigger"> Phủ mờ
+            </label>
           </div>
         </div>
 
@@ -225,10 +265,11 @@
           <div class="commission-hint" id="commissionHint"></div>
         </div>
       </div>
+      </div>
    <div class="divider"></div>
 
       <div style="margin-top:14px">
-        <button class="btn btn-primary" onclick="doCalculate()">⚡ Tính Giá</button>
+        <button class="btn btn-primary" id="btnCalculate" onclick="doCalculate()" disabled>⚡ Tính Giá</button>
       </div>
 
       <div class="quick-actions">
@@ -300,12 +341,10 @@
         </div>
         <div class="stat-grid" id="t-stats"></div>
         <div class="card" style="margin-bottom:14px">
-          <div class="card-title"><span class="icon">🏭</span> Thông số sản xuất từng công đoạn</div>
-          <table class="data-table" id="t-production-table"></table>
-        </div>
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-title"><span class="icon">📐</span> Thông số nguyên liệu</div>
-          <table class="data-table" id="t-material-table"></table>
+          <div class="card-title"><span class="icon">🏭</span> Chi tiết sản xuất & nguyên liệu</div>
+          <div style="overflow-x:auto">
+            <table class="data-table" id="t-unified-table"></table>
+          </div>
         </div>
         <div class="card">
           <div class="card-title"><span class="icon">⚖️</span> Trọng lượng & Vận chuyển</div>
@@ -355,6 +394,116 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIG PAGE: Cơ số sản xuất (full-page tab) ═══ -->
+<div class="config-page" id="configPage" style="display:none">
+  <div class="config-page-inner">
+    <div class="config-page-header">
+      <h2>🏭 Cơ Số Sản Xuất</h2>
+      <p class="config-page-subtitle">Giá trị đầu vào dùng cho tính toán sản xuất</p>
+    </div>
+
+    <!-- Bảng giá NVL -->
+    <div class="card config-card">
+      <div class="config-section-title">
+        <span>📦 Giá Nguyên Vật Liệu Cập Nhật Hàng Ngày</span>
+        <button class="btn btn-sm btn-outline" onclick="resetMaterialPrices()">🔄 Reset mặc định</button>
+      </div>
+      <div class="config-table-wrap">
+        <table class="config-table" id="materialPriceTable">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Màng</th>
+              <th>Tỉ trọng (g/cm³)</th>
+              <th>Độ dày (mic)</th>
+              <th>Giá (VNĐ/kg)</th>
+              <th>Giá (VNĐ/m²)</th>
+            </tr>
+          </thead>
+          <tbody id="materialPriceBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+      <p class="config-note">💡 Chỉnh <strong>Độ dày</strong> và <strong>Giá VNĐ/kg</strong> — giá VNĐ/m² tự động tính lại. Thay đổi sẽ áp dụng ngay cho lần tính giá tiếp theo.</p>
+    </div>
+
+    <!-- Bảng giá màu in -->
+    <div class="card config-card">
+      <div class="config-section-title">
+        <span>🎨 Giá Màu In Theo Loại Màng</span>
+      </div>
+      <div class="config-table-wrap">
+        <table class="config-table" id="inkPriceTable">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Màng</th>
+              <th>Giá mực/màu (đ)</th>
+            </tr>
+          </thead>
+          <tbody id="inkPriceBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+      <p class="config-note">💡 Giá mực in tính trên mỗi màu in. PET/PA mặc định 135 đ, các loại khác 120 đ.</p>
+    </div>
+
+    <!-- Chi phí nhân công -->
+    <div class="card config-card">
+      <div class="config-section-title">
+        <span>👷 Chi Phí Nhân Công</span>
+      </div>
+      <div class="config-cpsx-grid">
+        <div class="config-cpsx-item">
+          <label>Chi phí nhân công (đ)</label>
+          <input type="text" class="fmt-number" id="cfgLaborCost" value="318" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+      </div>
+      <p class="config-note">💡 Chi phí nhân công được cộng vào CPSX in cho mỗi đơn hàng.</p>
+    </div>
+
+    <!-- Phụ phí nhũ / phủ mờ -->
+    <div class="card config-card">
+      <div class="config-section-title">
+        <span>✨ Phụ Phí Nhũ / Phủ Mờ</span>
+      </div>
+      <div class="config-cpsx-grid">
+        <div class="config-cpsx-item">
+          <label>Giá nhũ (đ)</label>
+          <input type="text" class="fmt-number" id="cfgNhuPrice" value="200" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+        <div class="config-cpsx-item">
+          <label>Giá phủ mờ (đ)</label>
+          <input type="text" class="fmt-number" id="cfgMoPrice" value="200" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+      </div>
+      <p class="config-note">💡 Khi tích Nhũ hoặc Phủ mờ ở form nhập liệu, giá trị tương ứng sẽ được cộng vào CPSX in.</p>
+    </div>
+    <!-- Chi phí sản xuất -->
+    <div class="card config-card">
+      <div class="config-section-title">
+        <span>⚙️ Chi Phí Sản Xuất (CPSX)</span>
+      </div>
+      <div class="config-cpsx-grid">
+        <div class="config-cpsx-item">
+          <label>CPSX Ghép (đ/m²)</label>
+          <input type="text" class="fmt-number" id="cfgGhepCPSX" value="684" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+        <div class="config-cpsx-item">
+          <label>CPSX Cắt cơ bản (đ)</label>
+          <input type="text" class="fmt-number" id="cfgCutBase" value="971" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+        <div class="config-cpsx-item">
+          <label>Giá trục in (đ/đơn vị)</label>
+          <input type="text" class="fmt-number" id="cfgCylinderPrice" value="7.300.000" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+      </div>
     </div>
   </div>
 </div>

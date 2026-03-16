@@ -77,6 +77,11 @@ document.addEventListener('DOMContentLoaded', () => {
   updateStructurePreview();
   updateCylinderPreview();
   loadDisplayPreferences();
+
+  // Validate order info on text input changes
+  document.getElementById('customer').addEventListener('input', validateOrderInfo);
+  document.getElementById('productName').addEventListener('input', validateOrderInfo);
+  validateOrderInfo();
 });
 
 // ══════════════════════════════════════════════
@@ -154,6 +159,74 @@ function showToast(message, type = 'info') {
   toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> ${message}`;
   container.appendChild(toast);
   setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4200);
+}
+
+// ══════════════════════════════════════════════
+// PRODUCT TYPE HANDLERS
+// ══════════════════════════════════════════════
+function handleProductType() {
+  const type = document.getElementById('productType').value;
+  const bagGroup = document.getElementById('bagTypeGroup');
+  const filmGroup = document.getElementById('filmTypeGroup');
+  const structSection = document.getElementById('structureSection');
+
+  // Reset sub-type selections
+  document.getElementById('bagType').value = '';
+  document.getElementById('filmType').value = '';
+
+  // Show/hide sub-type dropdowns
+  bagGroup.style.display = type === 'tui' ? 'block' : 'none';
+  filmGroup.style.display = type === 'mang' ? 'block' : 'none';
+
+  // Hide structure until sub-type is selected
+  structSection.style.display = 'none';
+  validateOrderInfo();
+}
+
+function handleSubType() {
+  const type = document.getElementById('productType').value;
+  const structSection = document.getElementById('structureSection');
+
+  let subVal = '';
+  if (type === 'tui') {
+    subVal = document.getElementById('bagType').value;
+  } else if (type === 'mang') {
+    subVal = document.getElementById('filmType').value;
+  }
+
+  // Show structure section when a sub-type is selected
+  if (subVal) {
+    structSection.style.display = 'block';
+    // Re-trigger auto-calc setup for newly visible elements
+    setupAutoCalc();
+  } else {
+    structSection.style.display = 'none';
+  }
+  validateOrderInfo();
+}
+
+// ══════════════════════════════════════════════
+// ORDER VALIDATION — enable/disable Tính Giá
+// ══════════════════════════════════════════════
+function isOrderInfoComplete() {
+  const productType = document.getElementById('productType').value;
+
+  if (!productType) return false;
+
+  // Check sub-type based on product type
+  if (productType === 'tui') {
+    return !!document.getElementById('bagType').value;
+  } else if (productType === 'mang') {
+    return !!document.getElementById('filmType').value;
+  }
+  return false;
+}
+
+function validateOrderInfo() {
+  const btn = document.getElementById('btnCalculate');
+  if (!btn) return;
+  const complete = isOrderInfoComplete();
+  btn.disabled = !complete;
 }
 
 // ══════════════════════════════════════════════
@@ -265,8 +338,22 @@ function updateStructurePreview() {
 function switchView(view) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const panel = document.getElementById('panel-' + view);
-  if (panel) panel.classList.add('active');
+
+  const mainContainer = document.querySelector('.container');
+  const configPage = document.getElementById('configPage');
+
+  if (view === 'config') {
+    // Hide main content, show config page
+    if (mainContainer) mainContainer.style.display = 'none';
+    if (configPage) { configPage.style.display = ''; renderMaterialPriceTable(); renderInkPriceTable(); populateCPSXInputs(); }
+  } else {
+    // Show main content, hide config page
+    if (mainContainer) mainContainer.style.display = '';
+    if (configPage) { configPage.style.display = 'none'; saveMaterialConfig(); }
+    const panel = document.getElementById('panel-' + view);
+    if (panel) panel.classList.add('active');
+  }
+
   if (view === 'history') renderHistory();
   if (view === 'moq' && currentResult) renderMOQView(currentResult);
   if (view === 'bento' && currentResult) renderBentoView(currentResult);
@@ -288,16 +375,20 @@ function gatherInput() {
   return {
     customer: document.getElementById('customer').value || 'N/A',
     productName: document.getElementById('productName').value || 'N/A',
+    productType: document.getElementById('productType').value || '',
+    bagType: document.getElementById('bagType').value || '',
+    filmType: document.getElementById('filmType').value || '',
     quantity: getFmtValue('quantity', 30000),
-    numColors: parseInt(document.getElementById('numColors').value) || 4,
+    numColors: parseInt(document.getElementById('numColors').value) || 0,
     layer1Id: document.getElementById('layer1').value || null,
     layer2Id: document.getElementById('layer2').value || null,
     layer3Id: document.getElementById('layer3').value || null,
     layer4Id: document.getElementById('layer4').value || null,
     spreadWidth: parseFloat(document.getElementById('spreadWidth').value) || 0.53,
     cutStep: parseFloat(document.getElementById('cutStep').value) || 0.145,
-    metallicSurcharge: parseInt(document.getElementById('metallic').value) || 0,
-    coverageRatio: (parseInt(document.getElementById('coverage').value) || 100) / 100,
+    metallicSurcharge: (document.getElementById('hasNhu').checked ? CONSTANTS.nhuPrice : 0)
+                     + (document.getElementById('hasMo').checked ? CONSTANTS.moPrice : 0),
+    coverageRatio: (parseFloat(document.getElementById('coverage').value) || 100) / 100,
     handleWeight: parseFloat(document.getElementById('handleWeight').value) || 0,
     hasZipper: document.getElementById('hasZipper').checked,
     paymentDays: parseInt(document.querySelector('#paymentTermGroup .option-btn.active')?.dataset.value) || 30,
@@ -324,6 +415,11 @@ function gatherInput() {
 // CALCULATE
 // ══════════════════════════════════════════════
 function doCalculate(silent = false) {
+  // Block calculation if order info is incomplete
+  if (!isOrderInfoComplete()) {
+    if (!silent) showToast('Vui lòng nhập đầy đủ Thông tin đơn hàng trước.', 'error');
+    return;
+  }
   const input = gatherInput();
   currentResult = calculate(input);
   if (!currentResult) {
@@ -523,32 +619,104 @@ function renderTechView(r) {
     <div class="stat-card pink"><div class="stat-label">Ngày SX</div><div class="stat-value">${r.productionDays}</div></div>
   `;
 
-  const prodRows = [];
-  prodRows.push(['CPSX IN', r.layers.print.material.name, fmt(r.printNLWidth*100,1), fmt(r.printMeters,0), fmt(r.printWaste,0), fmt(r.printMeters + r.printWaste,0), fmt(r.printCPSX,0)]);
-  if (r.layers.lam3) prodRows.push(['GHÉP L3 (Lớp 2)', r.layers.lam3.material.name, fmt(r.lam3Width*100,1), fmt(r.lam3Meters,0), fmt(r.lam3Waste,0), fmt(r.lam3Meters + r.lam3Waste,0), CONSTANTS.ghepCPSX]);
-  if (r.layers.lam2) prodRows.push(['GHÉP L2 (Lớp 3)', r.layers.lam2.material.name, fmt(r.lam2Width*100,1), fmt(r.lam2Meters,0), fmt(r.lam2Waste,0), fmt(r.lam2Meters + r.lam2Waste,0), CONSTANTS.ghepCPSX]);
-  if (r.layers.lam1) prodRows.push(['GHÉP L1 (Lớp 4)', r.layers.lam1.material.name, fmt(r.lam1Width*100,1), fmt(r.lam1Meters,0), fmt(r.lam1Waste,0), fmt(r.lam1Meters + r.lam1Waste,0), CONSTANTS.ghepCPSX]);
-  prodRows.push(['CẮT', '—', fmt(r.cutWidth*100,1), fmt(r.cutMeters,0), fmt(r.cutWaste,0), fmt(r.cutMeters + r.cutWaste,0), fmt(r.cutCPSX,0)]);
+  // ── Bảng gộp: Chi tiết sản xuất & nguyên liệu ──
+  const uniRows = [];
+  // Helper: build a unified row [công đoạn, vật liệu, khổ(m), thành phẩm(m), phi hao, đầu vào VL, CPSX, thành tiền CPSX, chi phí VL (đ/m²), thành tiền CPVL]
+  let totalCPSX = 0, totalCPVL = 0;
 
-  document.getElementById('t-production-table').innerHTML = `
-    <tr><th>Công đoạn</th><th>Màng</th><th class="num">Khổ (cm)</th><th class="num">Mét TP</th><th class="num">Phi hao</th><th class="num">Tổng mét</th><th class="num">CPSX/m</th></tr>
-    ${prodRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td><td class="num highlight">${r[5]}</td><td class="num">${r[6]}</td></tr>`).join('')}
-  `;
+  // CPSX IN (Lớp 1 - print)
+  const printInput = r.printMeters + r.printWaste;
+  totalCPSX += r.printCostCPSX;
+  totalCPVL += r.printCostMaterial;
+  uniRows.push({
+    stage: 'CPSX IN', mat: r.layers.print.material.name,
+    width: r.printNLWidth, meters: r.printMeters, waste: r.printWaste,
+    input: printInput, cpsx: r.printCPSX, costCPSX: r.printCostCPSX,
+    matPrice: r.layers.print.material.pricePerM2, costMat: r.printCostMaterial
+  });
 
-  const matRows = [];
-  const addMat = (label, m) => {
-    matRows.push([label, m.name, m.density, m.thickness, fmt(m.pricePerKg), fmt(m.pricePerM2, 1)]);
-  };
-  addMat('Lớp 1', r.layers.print.material);
-  if (r.layers.lam3) addMat('Lớp 2', r.layers.lam3.material);
-  if (r.layers.lam2) addMat('Lớp 3', r.layers.lam2.material);
-  if (r.layers.lam1) addMat('Lớp 4', r.layers.lam1.material);
+  // GHÉP L3 (Lớp 2)
+  if (r.layers.lam3) {
+    const lamInput = r.lam3Meters + r.lam3Waste;
+    totalCPSX += r.lam3CostCPSX;
+    totalCPVL += r.lam3CostMaterial;
+    uniRows.push({
+      stage: 'GHÉP L3 (Lớp 2)', mat: r.layers.lam3.material.name,
+      width: r.lam3Width, meters: r.lam3Meters, waste: r.lam3Waste,
+      input: lamInput, cpsx: CONSTANTS.ghepCPSX, costCPSX: r.lam3CostCPSX,
+      matPrice: r.layers.lam3.material.pricePerM2, costMat: r.lam3CostMaterial
+    });
+  }
 
-  document.getElementById('t-material-table').innerHTML = `
-    <tr><th>Vị trí</th><th>Màng</th><th class="num">Tỉ trọng</th><th class="num">Độ dầy (mic)</th><th class="num">Giá (đ/kg)</th><th class="num">Giá (đ/m²)</th></tr>
-    ${matRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td><td class="num highlight">${r[5]}</td></tr>`).join('')}
-    <tr class="total-row"><td colspan="3">Tổng độ dầy</td><td class="num">${r.totalThickness} mic</td><td colspan="2"></td></tr>
-  `;
+  // GHÉP L2 (Lớp 3)
+  if (r.layers.lam2) {
+    const lamInput = r.lam2Meters + r.lam2Waste;
+    totalCPSX += r.lam2CostCPSX;
+    totalCPVL += r.lam2CostMaterial;
+    uniRows.push({
+      stage: 'GHÉP L2 (Lớp 3)', mat: r.layers.lam2.material.name,
+      width: r.lam2Width, meters: r.lam2Meters, waste: r.lam2Waste,
+      input: lamInput, cpsx: CONSTANTS.ghepCPSX, costCPSX: r.lam2CostCPSX,
+      matPrice: r.layers.lam2.material.pricePerM2, costMat: r.lam2CostMaterial
+    });
+  }
+
+  // GHÉP L1 (Lớp 4)
+  if (r.layers.lam1) {
+    const lamInput = r.lam1Meters + r.lam1Waste;
+    totalCPSX += r.lam1CostCPSX;
+    totalCPVL += r.lam1CostMaterial;
+    uniRows.push({
+      stage: 'GHÉP L1 (Lớp 4)', mat: r.layers.lam1.material.name,
+      width: r.lam1Width, meters: r.lam1Meters, waste: r.lam1Waste,
+      input: lamInput, cpsx: CONSTANTS.ghepCPSX, costCPSX: r.lam1CostCPSX,
+      matPrice: r.layers.lam1.material.pricePerM2, costMat: r.lam1CostMaterial
+    });
+  }
+
+  // CẮT
+  const cutInput = r.cutMeters + r.cutWaste;
+  totalCPSX += r.cutCostCPSX;
+  uniRows.push({
+    stage: 'CẮT', mat: '—',
+    width: r.cutWidth, meters: r.cutMeters, waste: r.cutWaste,
+    input: cutInput, cpsx: r.cutCPSX, costCPSX: r.cutCostCPSX,
+    matPrice: null, costMat: null
+  });
+
+  const uniHeader = `<tr>
+    <th>Công đoạn</th><th>Vật liệu</th>
+    <th class="num">Khổ (m)</th><th class="num">Thành phẩm (m)</th><th class="num">Phi hao</th><th class="num">Đầu vào VL</th>
+    <th class="num">CPSX (đ/m²)</th><th class="num">Thành tiền CPSX</th>
+    <th class="num">CP vật liệu (đ/m²)</th><th class="num">Thành tiền CPVL</th>
+  </tr>`;
+
+  const uniBody = uniRows.map(row => `<tr>
+    <td>${row.stage}</td><td>${row.mat}</td>
+    <td class="num">${fmt(row.width, 2)}</td>
+    <td class="num">${fmt(row.meters, 0)}</td>
+    <td class="num">${fmt(row.waste, 0)}</td>
+    <td class="num highlight">${fmt(row.input, 0)}</td>
+    <td class="num">${fmt(row.cpsx, 0)}</td>
+    <td class="num">${fmt(row.costCPSX, 0)}</td>
+    <td class="num">${row.matPrice != null ? fmt(row.matPrice, 1) : '—'}</td>
+    <td class="num">${row.costMat != null ? fmt(row.costMat, 0) : '—'}</td>
+  </tr>`).join('');
+
+  const grandTotal = totalCPSX + totalCPVL;
+  const uniFooter = `
+    <tr class="total-row">
+      <td colspan="7">TỔNG</td>
+      <td class="num">${fmt(totalCPSX, 0)}</td>
+      <td class="num"></td>
+      <td class="num">${fmt(totalCPVL, 0)}</td>
+    </tr>
+    <tr class="total-row" style="font-size:1.05em">
+      <td colspan="7"><strong>TỔNG GIÁ VỐN SẢN XUẤT</strong></td>
+      <td colspan="3" class="num" style="color:var(--accent);font-weight:800">${fmt(grandTotal, 0)} đ</td>
+    </tr>`;
+
+  document.getElementById('t-unified-table').innerHTML = uniHeader + uniBody + uniFooter;
 
   document.getElementById('t-weight').innerHTML = [
     ['Diện tích 1 túi', fmtM2(r.bagArea)],
@@ -640,42 +808,47 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters) {
   // Build roll-based quantities (1 to 6 rolls of print layer)
   const rollLevels = [1, 2, 3, 4, 5, 6];
 
-  // Build columns for other layers showing roll info
+  // Build columns for other layers (non-print) showing meters + kg
   const otherLayers = matCols.filter(c => c.key !== 'print');
+
+  // Helper: compute kg from meters for a given layer
+  const calcKg = (layerMat, meters, width) => {
+    if (!layerMat) return 0;
+    // kg = meters × width(m) × thickness(mic)/1e6(→m) × density(g/cm³)×1000(→kg/m³)
+    // simplified: meters × width × thickness × density / 1000
+    return meters * width * layerMat.thickness * layerMat.density / 1000;
+  };
 
   let rows = '';
   rollLevels.forEach(numRolls => {
     const availableMeters = numRolls * rollLen;
     // Estimate quantity from available print meters
-    const estQty = Math.round(availableMeters / metersPerBag / 100) * 100; // round to nearest 100
+    const estQty = Math.round(availableMeters / metersPerBag / 100) * 100;
     if (estQty <= 0) return;
 
     const inp = { ...baseInput, quantity: estQty };
     const res = calculate(inp);
     if (!res) return;
 
-    // Check actual meters used vs available
-    const actualPrintMeters = res.printMeters + res.printWaste;
     const isCurrent = numRolls === Math.ceil(totalPrintMeters / rollLen);
 
-    // Build cells for other layer rolls
+    // Build cells for other layers: meters + kg
     const otherCells = otherLayers.map(col => {
       const layerMeters = getLayerMeters(res, col.key);
       const layerMat = res.layers[col.key]?.material;
-      const layerRollLen = layerMat?.rollLength || 6000;
-      const rollsNeeded = layerMeters / layerRollLen;
-      return `<td>${rollsNeeded.toFixed(1)} cuộn<br><span style="font-size:0.72rem;color:var(--dim)">${fmt(layerMeters, 0)}m</span></td>`;
+      const layerWidth = res.layers[col.key]?.width || 0;
+      const kg = calcKg(layerMat, layerMeters, layerWidth);
+      return `<td>${fmt(layerMeters, 0)} m<br><span style="font-size:0.72rem;color:var(--dim)">${fmt(kg, 1)} kg</span></td>`;
     }).join('');
 
     rows += `
       <tr class="${isCurrent ? 'moq-highlight' : ''}">
         <td style="font-weight:${isCurrent ? '700' : '400'}">${numRolls} cuộn<br><span style="font-size:0.72rem;color:var(--dim)">${fmt(numRolls * rollLen, 0)}m</span></td>
         <td style="font-weight:${isCurrent ? '700' : '400'}">${fmt(estQty)}</td>
-        <td>${fmt(actualPrintMeters, 0)}</td>
-        <td style="font-weight:700;color:${isCurrent ? 'var(--accent)' : 'inherit'}">${fmt(res.finalPrice, 0)}</td>
-        <td>${fmt(res.finalPrice * estQty / 1000000, 2)}tr</td>
         <td>${res.productionDays} ngày</td>
         ${otherCells}
+        <td style="font-weight:700;color:${isCurrent ? 'var(--accent)' : 'inherit'}">${fmt(res.finalPrice, 0)}</td>
+        <td>${fmt(res.finalPrice * estQty / 1000000, 2)}tr</td>
       </tr>
     `;
   });
@@ -683,7 +856,7 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters) {
   const otherHeaders = otherLayers.map(col => `<th>${col.name}</th>`).join('');
 
   document.getElementById('moq-roll-table').innerHTML = `
-    <tr><th>${printName} (cuộn)</th><th>SL túi</th><th>${printName} cần (m)</th><th>Giá đề xuất</th><th>Tổng DT</th><th>TGSX</th>${otherHeaders}</tr>
+    <tr><th>${printName} (cuộn)</th><th>SL túi</th><th>TGSX</th>${otherHeaders}<th>Giá đề xuất</th><th>Tổng DT</th></tr>
     ${rows}
   `;
 }
@@ -953,15 +1126,25 @@ function loadFromHistory(id) {
   const inp = item.input;
   document.getElementById('customer').value = inp.customer || '';
   document.getElementById('productName').value = inp.productName || '';
+  // Restore product type and sub-type
+  document.getElementById('productType').value = inp.productType || 'tui';
+  handleProductType();
+  if (inp.productType === 'mang') {
+    document.getElementById('filmType').value = inp.filmType || '';
+  } else {
+    document.getElementById('bagType').value = inp.bagType || '';
+  }
+  handleSubType();
   setFmtValue('quantity', inp.quantity || 30000);
-  document.getElementById('numColors').value = inp.numColors || 4;
+  document.getElementById('numColors').value = inp.numColors != null ? inp.numColors : 4;
   document.getElementById('layer1').value = inp.layer1Id || 'PET';
   document.getElementById('layer2').value = inp.layer2Id || '';
   document.getElementById('layer3').value = inp.layer3Id || '';
   document.getElementById('layer4').value = inp.layer4Id || 'LLDPE';
   document.getElementById('spreadWidth').value = inp.spreadWidth || 0.53;
   document.getElementById('cutStep').value = inp.cutStep || 0.145;
-  document.getElementById('metallic').value = inp.metallicSurcharge || 0;
+  document.getElementById('hasNhu').checked = (inp.metallicSurcharge || 0) >= CONSTANTS.nhuPrice;
+  document.getElementById('hasMo').checked = (inp.metallicSurcharge || 0) >= (CONSTANTS.nhuPrice + CONSTANTS.moPrice);
   document.getElementById('coverage').value = (inp.coverageRatio || 1) * 100;
   document.getElementById('handleWeight').value = inp.handleWeight || 0;
   document.getElementById('hasZipper').checked = inp.hasZipper || false;
@@ -1023,7 +1206,8 @@ function resetForm() {
   document.getElementById('layer4').value = 'LLDPE';
   document.getElementById('spreadWidth').value = 0.53;
   document.getElementById('cutStep').value = 0.145;
-  document.getElementById('metallic').value = 0;
+  document.getElementById('hasNhu').checked = false;
+  document.getElementById('hasMo').checked = false;
   document.getElementById('coverage').value = 100;
   document.getElementById('handleWeight').value = 0;
   document.getElementById('hasZipper').checked = false;
@@ -1136,3 +1320,211 @@ function exportHistory() {
   URL.revokeObjectURL(url);
   showToast('Đã xuất lịch sử CSV!', 'success');
 }
+
+// ══════════════════════════════════════════════
+// CONFIG PAGE – Cơ số sản xuất (full-page tab)
+// ══════════════════════════════════════════════
+
+// Store original defaults for reset
+const MATERIALS_DEFAULTS = MATERIALS.map(m => ({
+  id: m.id, thickness: m.thickness, pricePerKg: m.pricePerKg, inkPricePerColor: m.inkPricePerColor
+}));
+
+// ── Number formatting with "." thousands separator ──
+function dotFmt(n) {
+  if (n == null || isNaN(n)) return '0';
+  return Math.round(n).toLocaleString('vi-VN');
+}
+function parseDotFmt(s) {
+  // "7.300.000" → 7300000, "34.091" → 34091
+  return parseFloat(String(s).replace(/\./g, '').replace(/,/g, '.')) || 0;
+}
+function fmtCfgInput(input) {
+  // Save cursor position
+  const pos = input.selectionStart;
+  const oldLen = input.value.length;
+  const raw = parseDotFmt(input.value);
+  if (raw > 0) {
+    input.value = dotFmt(raw);
+    // Restore cursor position accounting for added dots
+    const newLen = input.value.length;
+    input.selectionStart = input.selectionEnd = pos + (newLen - oldLen);
+  }
+}
+
+function renderMaterialPriceTable() {
+  const tbody = document.getElementById('materialPriceBody');
+  if (!tbody) return;
+  const fmtM2 = n => n.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+  tbody.innerHTML = MATERIALS.map((m, i) => {
+    const defaultM = MATERIALS_DEFAULTS[i];
+    const thkChanged = m.thickness !== defaultM.thickness ? ' changed' : '';
+    const priceChanged = m.pricePerKg !== defaultM.pricePerKg ? ' changed' : '';
+    return `<tr>
+      <td>${i + 1}</td>
+      <td class="mat-name">${m.name}</td>
+      <td class="mat-density">${m.density}</td>
+      <td><input class="cfg-input${thkChanged}" type="text" value="${dotFmt(m.thickness)}"
+           data-idx="${i}" data-field="thickness" oninput="fmtCfgInput(this)" onchange="updateMaterialPrice(this)"></td>
+      <td><input class="cfg-input${priceChanged}" type="text" value="${dotFmt(m.pricePerKg)}"
+           data-idx="${i}" data-field="pricePerKg" oninput="fmtCfgInput(this)" onchange="updateMaterialPrice(this)"></td>
+      <td class="mat-price-m2" id="priceM2_${i}">${fmtM2(m.pricePerM2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateMaterialPrice(input) {
+  const idx = parseInt(input.dataset.idx);
+  const field = input.dataset.field;
+  const val = parseDotFmt(input.value);
+  const m = MATERIALS[idx];
+  const defaultM = MATERIALS_DEFAULTS[idx];
+
+  m[field] = val;
+  // Recalculate VND/m²
+  m.pricePerM2 = m.pricePerKg * m.thickness * m.density / 1000;
+
+  // Update display
+  const cell = document.getElementById('priceM2_' + idx);
+  if (cell) cell.textContent = m.pricePerM2.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+
+  // Highlight if changed from default
+  const isChanged = m[field] !== defaultM[field];
+  input.classList.toggle('changed', isChanged);
+
+  // Update material name to reflect new thickness
+  m.name = m.id.replace(/\d+/g, '') + ' ' + m.thickness + 'mic';
+  const nameCell = input.closest('tr').querySelector('.mat-name');
+  if (nameCell) nameCell.textContent = m.name;
+
+  // Also update the layer dropdown options
+  updateLayerDropdowns();
+  saveMaterialConfig();
+}
+
+// ── Ink Price Table ──
+function renderInkPriceTable() {
+  const tbody = document.getElementById('inkPriceBody');
+  if (!tbody) return;
+  tbody.innerHTML = MATERIALS.map((m, i) => {
+    const defaultM = MATERIALS_DEFAULTS[i];
+    const inkChanged = m.inkPricePerColor !== defaultM.inkPricePerColor ? ' changed' : '';
+    return `<tr>
+      <td>${i + 1}</td>
+      <td class="mat-name">${m.name}</td>
+      <td><input class="cfg-input${inkChanged}" type="text" value="${dotFmt(m.inkPricePerColor)}"
+           data-idx="${i}" oninput="fmtCfgInput(this)" onchange="updateInkPrice(this)"></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateInkPrice(input) {
+  const idx = parseInt(input.dataset.idx);
+  const val = parseDotFmt(input.value);
+  const m = MATERIALS[idx];
+  const defaultM = MATERIALS_DEFAULTS[idx];
+  m.inkPricePerColor = val;
+  input.classList.toggle('changed', val !== defaultM.inkPricePerColor);
+  saveMaterialConfig();
+}
+
+function updateLayerDropdowns() {
+  [1, 2, 3, 4].forEach(i => {
+    const sel = document.getElementById('layer' + i);
+    if (!sel) return;
+    const currentVal = sel.value;
+    const firstOpt = sel.querySelector('option:first-child');
+    sel.innerHTML = '';
+    if (firstOpt) sel.appendChild(firstOpt);
+    MATERIALS.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.name;
+      if (m.id === currentVal) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function resetMaterialPrices() {
+  if (!confirm('Reset tất cả giá về mặc định?')) return;
+  MATERIALS_DEFAULTS.forEach((def, i) => {
+    MATERIALS[i].thickness = def.thickness;
+    MATERIALS[i].pricePerKg = def.pricePerKg;
+    MATERIALS[i].inkPricePerColor = def.inkPricePerColor;
+    MATERIALS[i].pricePerM2 = MATERIALS[i].pricePerKg * MATERIALS[i].thickness * MATERIALS[i].density / 1000;
+  });
+  renderMaterialPriceTable();
+  renderInkPriceTable();
+  updateLayerDropdowns();
+  localStorage.removeItem('lts_material_config');
+  showToast('Đã reset tất cả giá về mặc định!', 'success');
+}
+
+function populateCPSXInputs() {
+  document.getElementById('cfgGhepCPSX').value = dotFmt(CONSTANTS.ghepCPSX);
+  document.getElementById('cfgLaborCost').value = dotFmt(CONSTANTS.laborCost);
+  document.getElementById('cfgCutBase').value = dotFmt(CONSTANTS.cutBase || 971);
+  document.getElementById('cfgCylinderPrice').value = dotFmt(CONSTANTS.cylinderPricePerUnit);
+  document.getElementById('cfgNhuPrice').value = dotFmt(CONSTANTS.nhuPrice);
+  document.getElementById('cfgMoPrice').value = dotFmt(CONSTANTS.moPrice);
+}
+
+function updateCPSXConstants() {
+  CONSTANTS.ghepCPSX = parseDotFmt(document.getElementById('cfgGhepCPSX').value) || 684;
+  CONSTANTS.laborCost = parseDotFmt(document.getElementById('cfgLaborCost').value) || 318;
+  CONSTANTS.cutBase = parseDotFmt(document.getElementById('cfgCutBase').value) || 971;
+  CONSTANTS.cylinderPricePerUnit = parseDotFmt(document.getElementById('cfgCylinderPrice').value) || 7300000;
+  CONSTANTS.nhuPrice = parseDotFmt(document.getElementById('cfgNhuPrice').value) || 200;
+  CONSTANTS.moPrice = parseDotFmt(document.getElementById('cfgMoPrice').value) || 200;
+  saveMaterialConfig();
+  showToast('Đã cập nhật!', 'success');
+}
+
+// Persist to localStorage
+function saveMaterialConfig() {
+  const data = {
+    materials: MATERIALS.map(m => ({
+      id: m.id, thickness: m.thickness, pricePerKg: m.pricePerKg, inkPricePerColor: m.inkPricePerColor
+    })),
+    cpsx: {
+      ghepCPSX: CONSTANTS.ghepCPSX,
+      laborCost: CONSTANTS.laborCost,
+      cutBase: CONSTANTS.cutBase || 971,
+      cylinderPricePerUnit: CONSTANTS.cylinderPricePerUnit,
+      nhuPrice: CONSTANTS.nhuPrice,
+      moPrice: CONSTANTS.moPrice
+    }
+  };
+  localStorage.setItem('lts_material_config', JSON.stringify(data));
+}
+
+function loadMaterialConfig() {
+  const saved = localStorage.getItem('lts_material_config');
+  if (!saved) return;
+  try {
+    const data = JSON.parse(saved);
+    if (data.materials) {
+      data.materials.forEach(saved => {
+        const m = MATERIALS.find(x => x.id === saved.id);
+        if (m) {
+          m.thickness = saved.thickness;
+          m.pricePerKg = saved.pricePerKg;
+          if (saved.inkPricePerColor != null) m.inkPricePerColor = saved.inkPricePerColor;
+          m.pricePerM2 = m.pricePerKg * m.thickness * m.density / 1000;
+        }
+      });
+    }
+    if (data.cpsx) {
+      CONSTANTS.ghepCPSX = data.cpsx.ghepCPSX;
+      CONSTANTS.laborCost = data.cpsx.laborCost ?? data.cpsx.baseCPSX ?? 318;
+      CONSTANTS.cutBase = data.cpsx.cutBase;
+      CONSTANTS.cylinderPricePerUnit = data.cpsx.cylinderPricePerUnit;
+      if (data.cpsx.nhuPrice != null) CONSTANTS.nhuPrice = data.cpsx.nhuPrice;
+      if (data.cpsx.moPrice != null) CONSTANTS.moPrice = data.cpsx.moPrice;
+    }
+  } catch (e) { /* ignore corrupt data */ }
+}
+
+// Load config on startup
+loadMaterialConfig();
