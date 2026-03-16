@@ -231,8 +231,8 @@ function isOrderInfoComplete() {
 function validateOrderInfo() {
   const btn = document.getElementById('btnCalculate');
   if (!btn) return;
-  const complete = isOrderInfoComplete();
-  btn.disabled = !complete;
+  // Always keep the button enabled as per user request
+  btn.disabled = false;
 }
 
 // ══════════════════════════════════════════════
