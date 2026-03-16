@@ -16,14 +16,12 @@
 <header class="header">
   <div class="logo">LTS <span>Pricing</span></div>
   <div class="tabs" id="viewTabs">
-    <button class="tab active" data-view="sale" onclick="switchView('sale')">💰 Sale</button>
-    <button class="tab" data-view="manager" onclick="switchView('manager')">📊 Quản Lý</button>
+    <button class="tab active" data-view="manager" onclick="switchView('manager')">📊 Quản Lý</button>
     <button class="tab" data-view="tech" onclick="switchView('tech')">⚙️ Kỹ Thuật</button>
-    <button class="tab" data-view="moq" onclick="switchView('moq')">📦 MOQ</button>
     <button class="tab" data-view="history" onclick="switchView('history')">📋 Lịch Sử</button>
   </div>
   <div class="tab-divider"></div>
-  <button class="tab tab-config" data-view="config" onclick="switchView('config')">🏭 Cơ Số SX</button>
+  <button class="tab tab-config" data-view="config" onclick="switchView('config')">🏭 Bảng Định Mức</button>
   <div class="header-right">
     <!-- Display Settings Toolbar -->
     <div class="toolbar-group" id="layoutToolbar" title="Bố cục">
@@ -67,7 +65,7 @@
 
       <div class="form-group">
         <label class="form-label">Số lượng</label>
-        <input class="form-input calc-trigger" id="quantity" type="text" inputmode="numeric" data-fmt="number" value="30.000">
+        <input class="form-input calc-trigger" id="quantity" type="text" inputmode="numeric" data-fmt="number" value="">
       </div>
 
       <div class="form-row">
@@ -136,7 +134,7 @@
           <label class="form-label">Lớp 1</label>
           <select class="form-select calc-trigger" id="layer1"></select>
           <div class="mic-adjust" id="micAdjust1" style="display:none">
-            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
+            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dày (mic)</label>
             <input class="form-input calc-trigger" id="micLayer1" type="number" step="1" min="10" max="300">
           </div>
         </div>
@@ -144,7 +142,7 @@
           <label class="form-label">Lớp 2</label>
           <select class="form-select calc-trigger" id="layer2"><option value="">— Không —</option></select>
           <div class="mic-adjust" id="micAdjust2" style="display:none">
-            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
+            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dày (mic)</label>
             <input class="form-input calc-trigger" id="micLayer2" type="number" step="1" min="10" max="300">
           </div>
         </div>
@@ -152,7 +150,7 @@
           <label class="form-label">Lớp 3</label>
           <select class="form-select calc-trigger" id="layer3"><option value="">— Không —</option></select>
           <div class="mic-adjust" id="micAdjust3" style="display:none">
-            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
+            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dày (mic)</label>
             <input class="form-input calc-trigger" id="micLayer3" type="number" step="1" min="10" max="300">
           </div>
         </div>
@@ -160,7 +158,7 @@
           <label class="form-label">Lớp 4</label>
           <select class="form-select calc-trigger" id="layer4"><option value="">— Không —</option></select>
           <div class="mic-adjust" id="micAdjust4" style="display:none">
-            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dầy (mic)</label>
+            <label class="form-label" style="font-size:0.72rem;margin-top:6px">Độ dày (mic)</label>
             <input class="form-input calc-trigger" id="micLayer4" type="number" step="1" min="10" max="300">
           </div>
         </div>
@@ -286,8 +284,17 @@
         <p style="margin-top:8px;font-size:0.78rem;color:var(--dim)">Hoặc thay đổi bất kỳ thông số — kết quả sẽ tự động cập nhật</p>
       </div>
 
-      <!-- ══ SALE VIEW ══ -->
-      <div class="panel" id="panel-sale">
+      <!-- ══ MANAGER VIEW (Quản Lý) ══ -->
+      <div class="panel active" id="panel-manager">
+        <div class="manager-layout" style="position:relative;">
+          
+          <!-- LEFT: Main Manager Content (Scrollable with sections) -->
+          <div class="manager-content" style="padding-right: 220px;">
+            
+            <!-- SECTION: Báo Giá Gợi Ý (formerly Sale) -->
+            <div id="sect-sale" class="manager-section-anchor"></div>
+            <div class="card" style="margin-bottom:14px; padding:0; background:transparent; border:none; box-shadow:none;">
+    
         <div class="price-hero">
           <div class="label">Giá đề xuất / túi</div>
           <div class="value" id="s-price">—</div>
@@ -312,32 +319,82 @@
           <div class="card-title"><span class="icon">🧾</span> Thông tin đơn hàng</div>
           <ul class="breakdown-list" id="s-order-info"></ul>
         </div>
-      </div>
+            </div>
 
-      <!-- ══ MANAGER VIEW ══ -->
-      <div class="panel" id="panel-manager">
-        <div class="stat-grid" id="m-stats"></div>
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-title"><span class="icon">📊</span> Cơ cấu giá vốn sản xuất</div>
-          <div class="cost-bar" id="m-costbar"></div>
-          <div class="cost-legend" id="m-legend"></div>
-          <table class="data-table" id="m-cost-table" style="margin-top:14px"></table>
-        </div>
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-title"><span class="icon">📈</span> Phân tích lợi nhuận</div>
-          <ul class="breakdown-list" id="m-profit"></ul>
-        </div>
-        <div class="card">
-          <div class="card-title"><span class="icon">💵</span> Chi phí phụ tổng</div>
-          <table class="data-table" id="m-extra-table"></table>
-        </div>
-      </div>
+            <!-- SECTION: Phân Tích Chi Phí -->
+            <div id="sect-cost" class="manager-section-anchor"></div>
+            <div class="stat-grid" id="m-stats" style="margin-top:20px"></div>
+            <div class="card" style="margin-bottom:14px">
+              <div class="card-title"><span class="icon">📊</span> Cơ cấu giá vốn sản xuất</div>
+              <div class="cost-bar" id="m-costbar"></div>
+              <div class="cost-legend" id="m-legend"></div>
+              <table class="data-table" id="m-cost-table" style="margin-top:14px"></table>
+            </div>
+            <div class="card" style="margin-bottom:14px">
+              <div class="card-title"><span class="icon">📈</span> Phân tích lợi nhuận</div>
+              <ul class="breakdown-list" id="m-profit"></ul>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="icon">💵</span> Chi phí phụ tổng</div>
+              <table class="data-table" id="m-extra-table"></table>
+            </div>
+
+            <!-- SECTION: Thông Tin Kỹ Thuật (Manager) -->
+            <div id="sect-tech" class="manager-section-anchor"></div>
+            <div class="info-box" style="margin-top:14px">
+              <span class="icon">ℹ️</span>
+              Thông số kỹ thuật sản xuất dựa trên cấu trúc <strong id="m-t-structure"></strong>
+            </div>
+            <div class="stat-grid" id="m-t-stats"></div>
+            <div class="card" style="margin-bottom:14px">
+              <div class="card-title"><span class="icon">🏭</span> Đặc tả kỹ thuật & nguyên liệu</div>
+              <div style="overflow-x:auto">
+                <table class="data-table" id="m-t-unified-table"></table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="icon">⚖️</span> Trọng lượng & Vận chuyển</div>
+              <ul class="breakdown-list" id="m-t-weight"></ul>
+            </div>
+
+            <!-- SECTION: MOQ Bảng Giá -->
+            <div id="sect-moq" class="manager-section-anchor"></div>
+            <div class="card" style="margin-bottom:14px; margin-top:14px;">
+              <div class="card-title"><span class="icon">📦</span> Bảng giá theo số lượng (MOQ)</div>
+              <div class="info-box">
+                <span class="icon">💡</span>
+                So sánh giá khi thay đổi số lượng đặt hàng. Dòng tô sáng là số lượng hiện tại.
+              </div>
+              <table class="moq-table" id="moq-table"></table>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="icon">🎞️</span> MOQ theo cuộn màng</div>
+              <div class="info-box">
+                <span class="icon">💡</span>
+                Số lượng tối ưu theo cuộn màng tiêu chuẩn của lớp in. Giúp đặt hàng khớp cuộn, giảm hao hụt.
+              </div>
+              <table class="moq-table" id="moq-roll-table"></table>
+            </div>
+
+          </div> <!-- End manager-content -->
+
+          <!-- RIGHT: Floating TOC Sub-Menu -->
+          <div class="manager-toc" style="width: 200px; position: fixed; right: 20px; top: 80px; background: var(--surface); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 90;">
+            <div style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">Mục lục</div>
+            <a href="#sect-sale" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">1. Báo Giá Gợi Ý</a>
+            <a href="#sect-cost" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">2. Cơ Cấu Chi Phí</a>
+            <a href="#sect-tech" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">3. Thông Số Kỹ Thuật</a>
+            <a href="#sect-moq" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">4. Bảng Kế Hoạch Đặt (MOQ)</a>
+          </div>
+
+        </div> <!-- End manager-layout -->
+      </div> <!-- End panel-manager -->
 
       <!-- ══ TECH VIEW ══ -->
       <div class="panel" id="panel-tech">
         <div class="info-box">
           <span class="icon">ℹ️</span>
-          Thông số kỹ thuật sản xuất dựa trên cấu trúc <strong id="t-structure"></strong>
+          Chỉ Đạo Sản Xuất <strong id="t-structure"></strong>
         </div>
         <div class="stat-grid" id="t-stats"></div>
         <div class="card" style="margin-bottom:14px">
@@ -349,26 +406,6 @@
         <div class="card">
           <div class="card-title"><span class="icon">⚖️</span> Trọng lượng & Vận chuyển</div>
           <ul class="breakdown-list" id="t-weight"></ul>
-        </div>
-      </div>
-
-      <!-- ══ MOQ VIEW ══ -->
-      <div class="panel" id="panel-moq">
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-title"><span class="icon">📦</span> Bảng giá theo số lượng (MOQ)</div>
-          <div class="info-box">
-            <span class="icon">💡</span>
-            So sánh giá khi thay đổi số lượng đặt hàng. Dòng tô sáng là số lượng hiện tại.
-          </div>
-          <table class="moq-table" id="moq-table"></table>
-        </div>
-        <div class="card">
-          <div class="card-title"><span class="icon">🎞️</span> MOQ theo cuộn màng</div>
-          <div class="info-box">
-            <span class="icon">💡</span>
-            Số lượng tối ưu theo cuộn màng tiêu chuẩn của lớp in. Giúp đặt hàng khớp cuộn, giảm hao hụt.
-          </div>
-          <table class="moq-table" id="moq-roll-table"></table>
         </div>
       </div>
 
@@ -398,15 +435,18 @@
   </div>
 </div>
 
-<!-- ═══ CONFIG PAGE: Cơ số sản xuất (full-page tab) ═══ -->
+<!-- ═══ CONFIG PAGE: Bảng Định Mức Chi Phí (full-page tab) ═══ -->
 <div class="config-page" id="configPage" style="display:none">
   <div class="config-page-inner">
     <div class="config-page-header">
-      <h2>🏭 Cơ Số Sản Xuất</h2>
+      <h2>🏭 Bảng Định Mức Chi Phí</h2>
       <p class="config-page-subtitle">Giá trị đầu vào dùng cho tính toán sản xuất</p>
     </div>
 
-    <!-- Bảng giá NVL -->
+    <!-- ═══════════ NHÓM 1: CHI PHÍ KHÂU IN ═══════════ -->
+    <div class="config-group-header">🖨️ Chi Phí Khâu In</div>
+
+    <!-- 1.1 Bảng giá NVL -->
     <div class="card config-card">
       <div class="config-section-title">
         <span>📦 Giá Nguyên Vật Liệu Cập Nhật Hàng Ngày</span>
@@ -432,7 +472,7 @@
       <p class="config-note">💡 Chỉnh <strong>Độ dày</strong> và <strong>Giá VNĐ/kg</strong> — giá VNĐ/m² tự động tính lại. Thay đổi sẽ áp dụng ngay cho lần tính giá tiếp theo.</p>
     </div>
 
-    <!-- Bảng giá màu in -->
+    <!-- 1.2 Bảng giá màu in -->
     <div class="card config-card">
       <div class="config-section-title">
         <span>🎨 Giá Màu In Theo Loại Màng</span>
@@ -454,21 +494,43 @@
       <p class="config-note">💡 Giá mực in tính trên mỗi màu in. PET/PA mặc định 135 đ, các loại khác 120 đ.</p>
     </div>
 
-    <!-- Chi phí nhân công -->
+    <!-- 1.3 Công Thức Tính Phi Hao In -->
     <div class="card config-card">
       <div class="config-section-title">
-        <span>👷 Chi Phí Nhân Công</span>
+        <span>📉 Công Thức Tính Phi Hao In</span>
       </div>
-      <div class="config-cpsx-grid">
-        <div class="config-cpsx-item">
-          <label>Chi phí nhân công (đ)</label>
-          <input type="text" class="fmt-number" id="cfgLaborCost" value="318" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
-        </div>
+      <div class="config-table-wrap">
+        <table class="config-table" id="printWasteTable">
+          <thead>
+            <tr>
+              <th>Số màu in</th>
+              <th>Phi hao set up (m)</th>
+              <th style="padding-bottom: 8px">
+                Phi hao <br>
+                <div style="margin-top:2px;">
+                  <span style="font-size:0.8rem;font-weight:normal;text-transform:none">
+                    (CD / <input type="number" class="config-inline-input" style="width:75px; margin:0 4px; padding: 4px; font-weight:700" 
+                           id="cfgWasteA_header" onchange="updatePrintWasteConfig('header')"> × B)
+                  </span>
+                </div>
+              </th>
+              <th style="padding-bottom: 8px">
+                Vượt định mức 
+                <input type="number" class="config-inline-input" style="width:75px; margin:0 4px; padding: 4px; font-weight:700" 
+                       id="cfgWasteC_header" onchange="updatePrintWasteConfig('header')"> m <br>
+                <span style="font-size:0.75rem;font-weight:normal;text-transform:none">(cộng thêm CD / C × D)</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="printWasteBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
       </div>
-      <p class="config-note">💡 Chi phí nhân công được cộng vào CPSX in cho mỗi đơn hàng.</p>
+      <p class="config-note">💡 A, B, C, D là các tham số dùng chung cho mọi số màu in.</p>
     </div>
 
-    <!-- Phụ phí nhũ / phủ mờ -->
+    <!-- 1.3 Phụ phí nhũ / phủ mờ -->
     <div class="card config-card">
       <div class="config-section-title">
         <span>✨ Phụ Phí Nhũ / Phủ Mờ</span>
@@ -485,16 +547,45 @@
       </div>
       <p class="config-note">💡 Khi tích Nhũ hoặc Phủ mờ ở form nhập liệu, giá trị tương ứng sẽ được cộng vào CPSX in.</p>
     </div>
-    <!-- Chi phí sản xuất -->
+
+    <!-- 1.4 Chi phí nhân công và chi phí khác -->
     <div class="card config-card">
       <div class="config-section-title">
-        <span>⚙️ Chi Phí Sản Xuất (CPSX)</span>
+        <span>👷 Chi Phí Nhân Công & Chi Phí Khác</span>
+      </div>
+      <div class="config-cpsx-grid">
+        <div class="config-cpsx-item">
+          <label>Chi phí nhân công + khác (đ)</label>
+          <input type="text" class="fmt-number" id="cfgLaborCost" value="318" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+      </div>
+      <p class="config-note">💡 Chi phí nhân công và chi phí khác được cộng vào CPSX in cho mỗi đơn hàng.</p>
+    </div>
+
+    <!-- ═══════════ NHÓM 2: CHI PHÍ KHÂU GHÉP ═══════════ -->
+    <div class="config-group-header">🔗 Chi Phí Khâu Ghép</div>
+
+    <div class="card config-card">
+      <div class="config-section-title">
+        <span>⚙️ CPSX Ghép</span>
       </div>
       <div class="config-cpsx-grid">
         <div class="config-cpsx-item">
           <label>CPSX Ghép (đ/m²)</label>
           <input type="text" class="fmt-number" id="cfgGhepCPSX" value="684" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
         </div>
+      </div>
+      <p class="config-note">💡 Chi phí sản xuất ghép tính trên mỗi m² màng.</p>
+    </div>
+
+    <!-- ═══════════ NHÓM 3: CHI PHÍ KHÂU CẮT ═══════════ -->
+    <div class="config-group-header">✂️ Chi Phí Khâu Cắt</div>
+
+    <div class="card config-card">
+      <div class="config-section-title">
+        <span>✂️ Định Mức Cắt</span>
+      </div>
+      <div class="config-cpsx-grid">
         <div class="config-cpsx-item">
           <label>CPSX Cắt cơ bản (đ)</label>
           <input type="text" class="fmt-number" id="cfgCutBase" value="971" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
@@ -504,7 +595,41 @@
           <input type="text" class="fmt-number" id="cfgCylinderPrice" value="7.300.000" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
         </div>
       </div>
+      <div class="config-table-wrap" style="margin-top:12px">
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>Diện tích túi</th>
+              <th>Ngưỡng (m²)</th>
+              <th>Hệ số</th>
+              <th>CPSX Cắt thực tế</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Nhỏ</td>
+              <td><input type="number" class="config-inline-input" id="cfgCutThreshold1" value="0.07" step="0.01" min="0" onchange="updateCPSXConstants()"></td>
+              <td><input type="number" class="config-inline-input" id="cfgCutMult1" value="1.4" step="0.1" min="0" onchange="updateCPSXConstants()"></td>
+              <td class="cut-preview" id="cutPreview1">1.359</td>
+            </tr>
+            <tr>
+              <td>Trung bình</td>
+              <td><input type="number" class="config-inline-input" id="cfgCutThreshold2" value="0.2" step="0.01" min="0" onchange="updateCPSXConstants()"></td>
+              <td><input type="number" class="config-inline-input" id="cfgCutMult2" value="1.2" step="0.1" min="0" onchange="updateCPSXConstants()"></td>
+              <td class="cut-preview" id="cutPreview2">1.165</td>
+            </tr>
+            <tr>
+              <td>Lớn</td>
+              <td>—</td>
+              <td><input type="number" class="config-inline-input" id="cfgCutMult3" value="0.8" step="0.1" min="0" onchange="updateCPSXConstants()"></td>
+              <td class="cut-preview" id="cutPreview3">777</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="config-note">💡 CPSX Cắt = Cắt cơ bản × Hệ số. Ngưỡng dựa trên diện tích túi (m²).</p>
     </div>
+
   </div>
 </div>
 

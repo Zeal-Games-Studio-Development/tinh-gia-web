@@ -71,6 +71,8 @@ function getFmtValue(id, fallback) {
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
   populateDropdowns();
+  loadMaterialConfig();     // Restore Cơ Số SX from localStorage
+  resetForm();              // Clear all input fields on page load
   renderHistory();
   setupAutoCalc();
   setupFmtInputs();
@@ -210,8 +212,9 @@ function handleSubType() {
 // ══════════════════════════════════════════════
 function isOrderInfoComplete() {
   const productType = document.getElementById('productType').value;
+  const qty = getFmtValue('quantity', 0);
 
-  if (!productType) return false;
+  if (!productType || qty <= 0) return false;
 
   // Check sub-type based on product type
   if (productType === 'tui') {
@@ -237,8 +240,9 @@ function populateDropdowns() {
   const l2 = document.getElementById('layer2');
   const l3 = document.getElementById('layer3');
   const l4 = document.getElementById('layer4');
-  // IDs that should only appear in Layer 1 (outer/print layer)
   const layer1Only = ['BOPP18', 'BOPP20', 'BOPP30', 'MattBOPP20'];
+
+  l1.innerHTML = '<option value="">— Chọn —</option>';
   MATERIALS.forEach(m => {
     const opt = `<option value="${m.id}">${m.name}</option>`;
     l1.innerHTML += opt;
@@ -248,7 +252,6 @@ function populateDropdowns() {
       l4.innerHTML += opt;
     }
   });
-  l4.value = 'LLDPE';
 
   // Setup mic adjust listeners for each layer
   [1, 2, 3, 4].forEach(i => {
@@ -345,7 +348,7 @@ function switchView(view) {
   if (view === 'config') {
     // Hide main content, show config page
     if (mainContainer) mainContainer.style.display = 'none';
-    if (configPage) { configPage.style.display = ''; renderMaterialPriceTable(); renderInkPriceTable(); populateCPSXInputs(); }
+    if (configPage) { configPage.style.display = ''; renderMaterialPriceTable(); renderInkPriceTable(); renderPrintWasteTable(); populateCPSXInputs(); }
   } else {
     // Show main content, hide config page
     if (mainContainer) mainContainer.style.display = '';
@@ -378,7 +381,7 @@ function gatherInput() {
     productType: document.getElementById('productType').value || '',
     bagType: document.getElementById('bagType').value || '',
     filmType: document.getElementById('filmType').value || '',
-    quantity: getFmtValue('quantity', 30000),
+    quantity: getFmtValue('quantity', 0),
     numColors: parseInt(document.getElementById('numColors').value) || 0,
     layer1Id: document.getElementById('layer1').value || null,
     layer2Id: document.getElementById('layer2').value || null,
@@ -387,7 +390,7 @@ function gatherInput() {
     spreadWidth: parseFloat(document.getElementById('spreadWidth').value) || 0.53,
     cutStep: parseFloat(document.getElementById('cutStep').value) || 0.145,
     metallicSurcharge: (document.getElementById('hasNhu').checked ? CONSTANTS.nhuPrice : 0)
-                     + (document.getElementById('hasMo').checked ? CONSTANTS.moPrice : 0),
+      + (document.getElementById('hasMo').checked ? CONSTANTS.moPrice : 0),
     coverageRatio: (parseFloat(document.getElementById('coverage').value) || 100) / 100,
     handleWeight: parseFloat(document.getElementById('handleWeight').value) || 0,
     hasZipper: document.getElementById('hasZipper').checked,
@@ -431,18 +434,17 @@ function doCalculate(silent = false) {
   renderSaleView(currentResult);
   renderManagerView(currentResult);
   renderTechView(currentResult);
+  renderMOQView(currentResult); // always render MOQ now since it is part of Manager view
 
   const activeTab = document.querySelector('.tab.active');
-  const view = activeTab ? activeTab.dataset.view : 'sale';
+  const view = activeTab ? activeTab.dataset.view : 'manager';
   const layout = document.documentElement.getAttribute('data-layout');
+
   if (layout === 'bento') {
     renderBentoView(currentResult);
     switchView('bento');
-  } else if (view === 'moq') {
-    renderMOQView(currentResult);
-    switchView(view);
   } else if (view === 'history') {
-    switchView('sale');
+    switchView('manager');
   } else {
     switchView(view);
   }
@@ -468,10 +470,10 @@ function renderSaleView(r) {
   document.getElementById('s-structure').textContent = `${r.input.customer} — ${r.input.productName} | ${r.structureText} | SL: ${fmt(r.input.quantity)}`;
 
   document.getElementById('s-stats').innerHTML = `
-    <div class="stat-card accent"><div class="stat-label">Giá vốn+LN/túi</div><div class="stat-value">${fmt(r.costPerUnit,1)}</div></div>
+    <div class="stat-card accent"><div class="stat-label">Giá vốn+LN/túi</div><div class="stat-value">${fmt(r.costPerUnit, 1)}</div></div>
     <div class="stat-card green"><div class="stat-label">Tỉ lệ LN</div><div class="stat-value">${fmtPercent(r.profitRate)}</div></div>
-    <div class="stat-card cyan"><div class="stat-label">Doanh thu túi</div><div class="stat-value">${fmt(r.revenue/1000000,1)}tr</div></div>
-    <div class="stat-card orange"><div class="stat-label">Trục in</div><div class="stat-value">${fmt(r.cylinderCost/1000000,1)}tr</div></div>
+    <div class="stat-card cyan"><div class="stat-label">Doanh thu túi</div><div class="stat-value">${fmt(r.revenue / 1000000, 1)}tr</div></div>
+    <div class="stat-card orange"><div class="stat-label">Trục in</div><div class="stat-value">${fmt(r.cylinderCost / 1000000, 1)}tr</div></div>
   `;
 
   const items = [
@@ -491,11 +493,11 @@ function renderSaleView(r) {
     ['Sản phẩm', r.input.productName],
     ['Cấu trúc', r.structureText],
     ['Số lượng', fmt(r.input.quantity) + ' túi'],
-    ['Kích thước túi', `${+(r.input.spreadWidth*100).toFixed(1)}cm × ${+(r.input.cutStep*100).toFixed(1)}cm`],
+    ['Kích thước túi', `${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`],
     ['Diện tích túi', fmtM2(r.bagArea)],
     ['Trọng lượng', fmt(r.tareWeight, 2) + ' gr/cái'],
-    ['Thời gian SX', r.productionDays + ' ngày'],
-    ['Độ dầy', r.totalThickness + ' mic'],
+
+    ['Độ dày', r.totalThickness + ' mic'],
   ].map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('');
 
   analyzeChotGia();
@@ -550,11 +552,11 @@ function updateCylinderPreview() {
 function renderManagerView(r) {
   const total = r.totalProductionCost;
   document.getElementById('m-stats').innerHTML = `
-    <div class="stat-card accent"><div class="stat-label">Tổng Giá Vốn SX</div><div class="stat-value">${fmt(total/1000000,2)}tr</div></div>
-    <div class="stat-card green"><div class="stat-label">Lợi Nhuận</div><div class="stat-value">${fmt(r.profitAmount/1000000,2)}tr (${fmtPercent(r.profitRate)})</div></div>
-    <div class="stat-card cyan"><div class="stat-label">Doanh Thu</div><div class="stat-value">${fmt(r.revenue/1000000,2)}tr</div></div>
-    <div class="stat-card orange"><div class="stat-label">Giá Bán/Túi</div><div class="stat-value">${fmt(r.finalPrice,0)}đ</div></div>
-    <div class="stat-card pink"><div class="stat-label">Trục In (riêng)</div><div class="stat-value">${fmt(r.cylinderCost/1000000,1)}tr</div></div>
+    <div class="stat-card accent"><div class="stat-label">Tổng Giá Vốn SX</div><div class="stat-value">${fmt(total / 1000000, 2)}tr</div></div>
+    <div class="stat-card green"><div class="stat-label">Lợi Nhuận</div><div class="stat-value">${fmt(r.profitAmount / 1000000, 2)}tr (${fmtPercent(r.profitRate)})</div></div>
+    <div class="stat-card cyan"><div class="stat-label">Doanh Thu</div><div class="stat-value">${fmt(r.revenue / 1000000, 2)}tr</div></div>
+    <div class="stat-card orange"><div class="stat-label">Giá Bán/Túi</div><div class="stat-value">${fmt(r.finalPrice, 0)}đ</div></div>
+    <div class="stat-card pink"><div class="stat-label">Trục In (riêng)</div><div class="stat-value">${fmt(r.cylinderCost / 1000000, 1)}tr</div></div>
   `;
 
   const pIn = r.printTotalCost / total * 100;
@@ -566,9 +568,9 @@ function renderManagerView(r) {
     <div class="segment seg-cut" style="width:${pCut}%">${pCut.toFixed(0)}%</div>
   `;
   document.getElementById('m-legend').innerHTML = `
-    <div class="legend-item"><div class="dot" style="background:var(--accent)"></div>In: ${fmt(r.printTotalCost/1000000,2)}tr</div>
-    <div class="legend-item"><div class="dot" style="background:var(--accent2)"></div>Ghép: ${fmt(r.totalLamCost/1000000,2)}tr</div>
-    <div class="legend-item"><div class="dot" style="background:var(--orange)"></div>Cắt: ${fmt(r.cutTotalCost/1000000,2)}tr</div>
+    <div class="legend-item"><div class="dot" style="background:var(--accent)"></div>In: ${fmt(r.printTotalCost / 1000000, 2)}tr</div>
+    <div class="legend-item"><div class="dot" style="background:var(--accent2)"></div>Ghép: ${fmt(r.totalLamCost / 1000000, 2)}tr</div>
+    <div class="legend-item"><div class="dot" style="background:var(--orange)"></div>Cắt: ${fmt(r.cutTotalCost / 1000000, 2)}tr</div>
   `;
 
   const rows = [
@@ -597,11 +599,11 @@ function renderManagerView(r) {
   document.getElementById('m-extra-table').innerHTML = `
     <tr><th>Hạng mục</th><th>ĐVT</th><th class="num">Đơn giá</th><th class="num">SL</th><th class="num">Thành tiền</th><th class="num">Đ/Túi</th></tr>
     <tr><td>Trục in</td><td>bộ</td><td class="num">${fmt(r.cylinderCost)}</td><td class="num">1</td><td class="num">${fmt(r.cylinderCost)}</td><td class="num" style="color:var(--dim)">riêng</td></tr>
-    <tr><td>Zipper</td><td>m</td><td class="num">${r.input.hasZipper ? CONSTANTS.zipperPrice : 0}</td><td class="num">${r.input.hasZipper ? fmt(r.cutMeters + r.cutWaste, 0) : 0}</td><td class="num">${fmt(r.zipperTotal)}</td><td class="num">${fmt(r.zipperPerUnit,1)}</td></tr>
-    <tr><td>Thùng giấy <span style="color:var(--dim);font-size:0.75rem">(${fmt(r.actualBagsPerBox)} túi/thùng)</span></td><td>thùng</td><td class="num">${fmt(r.actualBoxPrice)}</td><td class="num">${fmt(r.numBoxes,0)}</td><td class="num">${fmt(r.boxTotal)}</td><td class="num">${fmt(r.boxPerUnit,1)}</td></tr>
-    <tr><td>Vận chuyển <span style="color:var(--dim);font-size:0.75rem">(${fmt(r.actualShippingPerKm)}đ/km × ${fmt(r.actualShippingKm)}km)</span></td><td>tấn</td><td class="num">${fmt(r.shippingRate)}</td><td class="num">${fmt(r.tareWeight * r.input.quantity / 1000000, 3)}</td><td class="num">${fmt(r.shippingTotal)}</td><td class="num">${fmt(r.shippingPerUnit,1)}</td></tr>
-    <tr><td>Lãi vay (${r.paymentDays} ngày)</td><td>—</td><td class="num">${fmtPercent(r.interestRate30)}</td><td class="num">—</td><td class="num">${fmt(r.interestPerUnit * r.input.quantity)}</td><td class="num">${fmt(r.interestPerUnit,1)}</td></tr>
-    <tr><td>Hoa hồng</td><td>—</td><td class="num">${fmtPercent(r.input.commissionRate)}</td><td class="num">—</td><td class="num">${fmt(r.commissionPerUnit * r.input.quantity)}</td><td class="num">${fmt(r.commissionPerUnit,1)}</td></tr>
+    <tr><td>Zipper</td><td>m</td><td class="num">${r.input.hasZipper ? CONSTANTS.zipperPrice : 0}</td><td class="num">${r.input.hasZipper ? fmt(r.cutMeters + r.cutWaste, 0) : 0}</td><td class="num">${fmt(r.zipperTotal)}</td><td class="num">${fmt(r.zipperPerUnit, 1)}</td></tr>
+    <tr><td>Thùng giấy <span style="color:var(--dim);font-size:0.75rem">(${fmt(r.actualBagsPerBox)} túi/thùng)</span></td><td>thùng</td><td class="num">${fmt(r.actualBoxPrice)}</td><td class="num">${fmt(r.numBoxes, 0)}</td><td class="num">${fmt(r.boxTotal)}</td><td class="num">${fmt(r.boxPerUnit, 1)}</td></tr>
+    <tr><td>Vận chuyển <span style="color:var(--dim);font-size:0.75rem">(${fmt(r.actualShippingPerKm)}đ/km × ${fmt(r.actualShippingKm)}km)</span></td><td>tấn</td><td class="num">${fmt(r.shippingRate)}</td><td class="num">${fmt(r.tareWeight * r.input.quantity / 1000000, 3)}</td><td class="num">${fmt(r.shippingTotal)}</td><td class="num">${fmt(r.shippingPerUnit, 1)}</td></tr>
+    <tr><td>Lãi vay (${r.paymentDays} ngày)</td><td>—</td><td class="num">${fmtPercent(r.interestRate30)}</td><td class="num">—</td><td class="num">${fmt(r.interestPerUnit * r.input.quantity)}</td><td class="num">${fmt(r.interestPerUnit, 1)}</td></tr>
+    <tr><td>Hoa hồng</td><td>—</td><td class="num">${fmtPercent(r.input.commissionRate)}</td><td class="num">—</td><td class="num">${fmt(r.commissionPerUnit * r.input.quantity)}</td><td class="num">${fmt(r.commissionPerUnit, 1)}</td></tr>
   `;
 }
 
@@ -610,14 +612,16 @@ function renderManagerView(r) {
 // ══════════════════════════════════════════════
 function renderTechView(r) {
   document.getElementById('t-structure').textContent = r.structureText;
+  document.getElementById('m-t-structure').textContent = r.structureText;
 
-  document.getElementById('t-stats').innerHTML = `
+  const tStatsHTML = `
     <div class="stat-card accent"><div class="stat-label">Đầu Vào Khâu In</div><div class="stat-value">${fmt(r.printMeters + r.printWaste, 0)} m</div></div>
     <div class="stat-card cyan"><div class="stat-label">Đầu Vào Khâu Cắt</div><div class="stat-value">${fmt(r.cutMeters + r.cutWaste, 0)} m</div></div>
-    <div class="stat-card green"><div class="stat-label">Khổ Thành Phẩm</div><div class="stat-value">${fmt(r.printWidth*100, 1)} cm</div></div>
-    <div class="stat-card orange"><div class="stat-label">Khổ Màng NL</div><div class="stat-value">${fmt(r.printNLWidth*100, 1)} cm</div></div>
-    <div class="stat-card pink"><div class="stat-label">Ngày SX</div><div class="stat-value">${r.productionDays}</div></div>
+    <div class="stat-card green"><div class="stat-label">Khổ Thành Phẩm</div><div class="stat-value">${fmt(r.printWidth * 100, 1)} cm</div></div>
+    <div class="stat-card orange"><div class="stat-label">Khổ Màng NL</div><div class="stat-value">${fmt(r.printNLWidth * 100, 1)} cm</div></div>
   `;
+  document.getElementById('t-stats').innerHTML = tStatsHTML;
+  document.getElementById('m-t-stats').innerHTML = tStatsHTML;
 
   // ── Bảng gộp: Chi tiết sản xuất & nguyên liệu ──
   const uniRows = [];
@@ -684,14 +688,27 @@ function renderTechView(r) {
     matPrice: null, costMat: null
   });
 
-  const uniHeader = `<tr>
+  const uniHeaderTech = `<tr>
+    <th>Công đoạn</th><th>Vật liệu</th>
+    <th class="num">Khổ (m)</th><th class="num">Thành phẩm (m)</th><th class="num">Phi hao</th><th class="num">Đầu vào VL</th>
+  </tr>`;
+
+  const uniHeaderManager = `<tr>
     <th>Công đoạn</th><th>Vật liệu</th>
     <th class="num">Khổ (m)</th><th class="num">Thành phẩm (m)</th><th class="num">Phi hao</th><th class="num">Đầu vào VL</th>
     <th class="num">CPSX (đ/m²)</th><th class="num">Thành tiền CPSX</th>
     <th class="num">CP vật liệu (đ/m²)</th><th class="num">Thành tiền CPVL</th>
   </tr>`;
 
-  const uniBody = uniRows.map(row => `<tr>
+  const uniBodyTech = uniRows.map(row => `<tr>
+    <td>${row.stage}</td><td>${row.mat}</td>
+    <td class="num">${fmt(row.width, 2)}</td>
+    <td class="num">${fmt(row.meters, 0)}</td>
+    <td class="num">${fmt(row.waste, 0)}</td>
+    <td class="num highlight">${fmt(row.input, 0)}</td>
+  </tr>`).join('');
+
+  const uniBodyManager = uniRows.map(row => `<tr>
     <td>${row.stage}</td><td>${row.mat}</td>
     <td class="num">${fmt(row.width, 2)}</td>
     <td class="num">${fmt(row.meters, 0)}</td>
@@ -704,7 +721,7 @@ function renderTechView(r) {
   </tr>`).join('');
 
   const grandTotal = totalCPSX + totalCPVL;
-  const uniFooter = `
+  const uniFooterManager = `
     <tr class="total-row">
       <td colspan="7">TỔNG</td>
       <td class="num">${fmt(totalCPSX, 0)}</td>
@@ -716,17 +733,22 @@ function renderTechView(r) {
       <td colspan="3" class="num" style="color:var(--accent);font-weight:800">${fmt(grandTotal, 0)} đ</td>
     </tr>`;
 
-  document.getElementById('t-unified-table').innerHTML = uniHeader + uniBody + uniFooter;
+  document.getElementById('t-unified-table').innerHTML = uniHeaderTech + uniBodyTech;
+  document.getElementById('m-t-unified-table').innerHTML = uniHeaderManager + uniBodyManager + uniFooterManager;
 
-  document.getElementById('t-weight').innerHTML = [
+  const tWeightItems = [
     ['Diện tích 1 túi', fmtM2(r.bagArea)],
     ['Tổng diện tích đơn hàng', fmt(r.totalArea, 1) + ' m²'],
     ['Trọng lượng / túi (Tare)', fmt(r.tareWeight, 2) + ' gr'],
     ['Tổng trọng lượng', fmt(r.tareWeight * r.input.quantity / 1000, 1) + ' kg'],
     ['Trọng lượng (tấn)', fmt(r.tareWeight * r.input.quantity / 1000000, 3) + ' tấn'],
-    ['Kích thước túi', `R${+(r.input.spreadWidth*1000).toFixed(0)} × D${+(r.input.cutStep*1000).toFixed(0)} mm`],
-    ['Giá trục in (bộ)', fmtVND(r.cylinderCost)],
-  ].map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('');
+    ['Kích thước túi', `${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`]
+  ];
+
+  const mWeightItems = [...tWeightItems, ['Giá trục in (bộ)', fmtVND(r.cylinderCost)]];
+
+  document.getElementById('t-weight').innerHTML = tWeightItems.map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('');
+  document.getElementById('m-t-weight').innerHTML = mWeightItems.map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('');
 }
 
 // ══════════════════════════════════════════════
@@ -755,6 +777,11 @@ function renderMOQView(r) {
     return layer.meters + layer.waste;
   };
 
+  const calcKg = (layerMat, meters, width) => {
+    if (!layerMat) return 0;
+    return meters * width * layerMat.thickness * layerMat.density / 1000;
+  };
+
   let rows = '';
   let results = [];
   moqLevels.forEach(qty => {
@@ -764,9 +791,13 @@ function renderMOQView(r) {
     const isCurrent = qty === currentQty;
     results.push({ qty, res, isCurrent });
 
-    const matCells = matCols.map(col =>
-      `<td>${fmt(getLayerMeters(res, col.key), 0)}</td>`
-    ).join('');
+    const matCells = matCols.map(col => {
+      const layerMeters = getLayerMeters(res, col.key);
+      const layerMat = res.layers[col.key]?.material;
+      const layerWidth = res.layers[col.key]?.width || 0;
+      const kg = calcKg(layerMat, layerMeters, layerWidth);
+      return `<td>${fmt(layerMeters, 0)} m<br><span style="font-size:0.75rem;color:var(--muted);font-weight:400;">(${fmt(kg, 1)} kg)</span></td>`;
+    }).join('');
 
     rows += `
       <tr class="${isCurrent ? 'moq-highlight' : ''}">
@@ -775,16 +806,16 @@ function renderMOQView(r) {
         <td>${fmt(res.costPerUnit, 1)}</td>
         <td style="font-weight:700;color:${isCurrent ? 'var(--accent)' : 'inherit'}">${fmt(res.finalPrice, 0)}</td>
         <td>${fmt(res.finalPrice * qty / 1000000, 2)}tr</td>
-        <td>${res.productionDays} ngày</td>
+
         ${matCells}
       </tr>
     `;
   });
 
-  const matHeaders = matCols.map(col => `<th>${col.name} (m)</th>`).join('');
+  const matHeaders = matCols.map(col => `<th>${col.name}</th>`).join('');
 
   document.getElementById('moq-table').innerHTML = `
-    <tr><th>Số lượng</th><th>LN %</th><th>Giá vốn+LN/túi</th><th>Giá đề xuất</th><th>Tổng DT</th><th>TGSX</th>${matHeaders}</tr>
+    <tr><th>Số lượng</th><th>LN %</th><th>Giá vốn+LN/túi</th><th>Giá đề xuất</th><th>Tổng DT</th>${matHeaders}</tr>
     ${rows}
   `;
 
@@ -814,16 +845,33 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters) {
   // Helper: compute kg from meters for a given layer
   const calcKg = (layerMat, meters, width) => {
     if (!layerMat) return 0;
-    // kg = meters × width(m) × thickness(mic)/1e6(→m) × density(g/cm³)×1000(→kg/m³)
-    // simplified: meters × width × thickness × density / 1000
     return meters * width * layerMat.thickness * layerMat.density / 1000;
+  };
+
+  // Helper: Find precise quantity using a local binary search against calculate engine
+  const findEstQtyForMeters = (targetMeters) => {
+    let low = 100, high = 1000000, bestQty = 0;
+    while (low <= high) {
+      let mid = Math.floor((low + high) / 2);
+      let res = calculate({ ...baseInput, quantity: mid });
+      if (!res) return low; // fallback
+      let currentMeters = res.printMeters + res.printWaste;
+
+      if (currentMeters <= targetMeters) {
+        bestQty = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return Math.floor(bestQty / 100) * 100;
   };
 
   let rows = '';
   rollLevels.forEach(numRolls => {
     const availableMeters = numRolls * rollLen;
-    // Estimate quantity from available print meters
-    const estQty = Math.round(availableMeters / metersPerBag / 100) * 100;
+    // Exactly quantify bags factoring in fixed + variable waste loops
+    const estQty = findEstQtyForMeters(availableMeters);
     if (estQty <= 0) return;
 
     const inp = { ...baseInput, quantity: estQty };
@@ -832,20 +880,22 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters) {
 
     const isCurrent = numRolls === Math.ceil(totalPrintMeters / rollLen);
 
+    const printKg = calcKg(printMat, availableMeters, res.layers.print.width);
+
     // Build cells for other layers: meters + kg
     const otherCells = otherLayers.map(col => {
       const layerMeters = getLayerMeters(res, col.key);
       const layerMat = res.layers[col.key]?.material;
       const layerWidth = res.layers[col.key]?.width || 0;
       const kg = calcKg(layerMat, layerMeters, layerWidth);
-      return `<td>${fmt(layerMeters, 0)} m<br><span style="font-size:0.72rem;color:var(--dim)">${fmt(kg, 1)} kg</span></td>`;
+      return `<td>${fmt(layerMeters, 0)} m<br><span style="font-size:0.75rem;color:var(--muted);font-weight:400;">(${fmt(kg, 1)} kg)</span></td>`;
     }).join('');
 
     rows += `
       <tr class="${isCurrent ? 'moq-highlight' : ''}">
-        <td style="font-weight:${isCurrent ? '700' : '400'}">${numRolls} cuộn<br><span style="font-size:0.72rem;color:var(--dim)">${fmt(numRolls * rollLen, 0)}m</span></td>
+        <td style="font-weight:${isCurrent ? '700' : '400'}">${numRolls} cuộn<br><span style="font-size:0.75rem;color:var(--muted);font-weight:400;">(${fmt(availableMeters, 0)}m - ${fmt(printKg, 1)} kg)</span></td>
         <td style="font-weight:${isCurrent ? '700' : '400'}">${fmt(estQty)}</td>
-        <td>${res.productionDays} ngày</td>
+
         ${otherCells}
         <td style="font-weight:700;color:${isCurrent ? 'var(--accent)' : 'inherit'}">${fmt(res.finalPrice, 0)}</td>
         <td>${fmt(res.finalPrice * estQty / 1000000, 2)}tr</td>
@@ -856,7 +906,7 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters) {
   const otherHeaders = otherLayers.map(col => `<th>${col.name}</th>`).join('');
 
   document.getElementById('moq-roll-table').innerHTML = `
-    <tr><th>${printName} (cuộn)</th><th>SL túi</th><th>TGSX</th>${otherHeaders}<th>Giá đề xuất</th><th>Tổng DT</th></tr>
+    <tr><th>${printName} (cuộn)</th><th>SL túi</th>${otherHeaders}<th>Giá đề xuất</th><th>Tổng DT</th></tr>
     ${rows}
   `;
 }
@@ -888,7 +938,7 @@ function renderBentoView(r) {
 
   const makeBlock = (mat) => {
     if (mat) {
-      return `<div class="bento-layer-block"><div class="bento-layer-name">${mat.name.split(' ')[0]}</div><div class="bento-layer-thick">${mat.thickness}mic</div><div class="bento-layer-price">${fmt(mat.pricePerM2,0)} đ/m²</div></div>`;
+      return `<div class="bento-layer-block"><div class="bento-layer-name">${mat.name.split(' ')[0]}</div><div class="bento-layer-thick">${mat.thickness}mic</div><div class="bento-layer-price">${fmt(mat.pricePerM2, 0)} đ/m²</div></div>`;
     } else {
       return `<div class="bento-layer-block" style="background:linear-gradient(180deg,#94a3b8,#64748b);opacity:0.4"><div class="bento-layer-name">—</div><div class="bento-layer-thick">Không dùng</div></div>`;
     }
@@ -910,9 +960,9 @@ function renderBentoView(r) {
     <div class="bento-bar-row">
       <div class="bento-bar-label">${item.label}</div>
       <div class="bento-bar-track">
-        <div class="bento-bar-fill" style="width:${Math.max(item.value / maxVal * 100, 3)}%;background:${item.color}">${fmt(item.value,1)}</div>
+        <div class="bento-bar-fill" style="width:${Math.max(item.value / maxVal * 100, 3)}%;background:${item.color}">${fmt(item.value, 1)}</div>
       </div>
-      <div class="bento-bar-amount">${fmt(item.value,1)} đ</div>
+      <div class="bento-bar-amount">${fmt(item.value, 1)} đ</div>
     </div>
   `).join('');
 
@@ -924,7 +974,7 @@ function renderBentoView(r) {
         <div class="bento-hero-label">Giá Đề Xuất / Túi</div>
         <div class="bento-hero-price">${fmt(r.finalPrice, 0)} <span style="font-size:0.35em;opacity:0.7">đ</span></div>
         <div class="bento-hero-unit">chưa VAT · ${r.structureText}</div>
-        <div class="bento-hero-sub">${r.input.customer} — ${r.input.productName} · SL: ${fmt(r.input.quantity)} túi · ${r.productionDays} ngày SX</div>
+        <div class="bento-hero-sub">${r.input.customer} — ${r.input.productName} · SL: ${fmt(r.input.quantity)} túi</div>
       </div>
 
       <!-- ROW 2: Metrics -->
@@ -949,10 +999,10 @@ function renderBentoView(r) {
         <div class="bento-section-title">🏗️ Cấu Trúc Màng · ${r.totalThickness} mic</div>
         <div class="bento-layers">${layerBlocks}</div>
         <div class="bento-struct-info">
-          <div><span class="bsi-label">Kích thước</span><span class="bsi-value">${+(r.input.spreadWidth*100).toFixed(1)}×${+(r.input.cutStep*100).toFixed(1)}cm</span></div>
+          <div><span class="bsi-label">Kích thước</span><span class="bsi-value">${+(r.input.spreadWidth * 100).toFixed(1)}×${+(r.input.cutStep * 100).toFixed(1)}cm</span></div>
           <div><span class="bsi-label">Diện tích</span><span class="bsi-value">${fmtM2(r.bagArea)}</span></div>
           <div><span class="bsi-label">Trọng lượng</span><span class="bsi-value">${fmt(r.tareWeight, 2)} gr</span></div>
-          <div><span class="bsi-label">Thời gian SX</span><span class="bsi-value">${r.productionDays} ngày</span></div>
+
           <div><span class="bsi-label">Đầu vào khâu in</span><span class="bsi-value">${fmt(r.printMeters + r.printWaste, 0)} m</span></div>
           <div><span class="bsi-label">Đầu vào khâu cắt</span><span class="bsi-value">${fmt(r.cutMeters + r.cutWaste, 0)} m</span></div>
         </div>
@@ -988,7 +1038,7 @@ function renderBentoView(r) {
         <div class="bento-bar-row" style="margin-top:8px;border-top:2px solid var(--accent);padding-top:10px">
           <div class="bento-bar-label" style="font-weight:700;color:var(--accent)">TỔNG</div>
           <div style="flex:1"></div>
-          <div class="bento-bar-amount" style="color:var(--accent);font-size:1.1rem;font-weight:800">${fmt(r.finalPrice,0)} đ</div>
+          <div class="bento-bar-amount" style="color:var(--accent);font-size:1.1rem;font-weight:800">${fmt(r.finalPrice, 0)} đ</div>
         </div>
       </div>
 
@@ -996,8 +1046,8 @@ function renderBentoView(r) {
         <div class="bento-section-title">💵 Chi Phí Phụ</div>
         <div class="bento-bar-row">
           <div class="bento-bar-label">Trục in</div>
-          <div class="bento-bar-track"><div class="bento-bar-fill" style="width:100%;background:var(--accent)">${fmt(r.cylinderCost/1000000,1)}tr</div></div>
-          <div class="bento-bar-amount">${fmt(r.cylinderCost/1000000,1)}tr</div>
+          <div class="bento-bar-track"><div class="bento-bar-fill" style="width:100%;background:var(--accent)">${fmt(r.cylinderCost / 1000000, 1)}tr</div></div>
+          <div class="bento-bar-amount">${fmt(r.cylinderCost / 1000000, 1)}tr</div>
         </div>
         <div class="bento-bar-row">
           <div class="bento-bar-label">Zipper tổng</div>
@@ -1024,10 +1074,10 @@ function renderBentoView(r) {
           <div class="bento-kv"><span class="bento-kv-label">Sản phẩm</span><span class="bento-kv-value">${r.input.productName}</span></div>
           <div class="bento-kv"><span class="bento-kv-label">Cấu trúc</span><span class="bento-kv-value">${r.structureText}</span></div>
           <div class="bento-kv"><span class="bento-kv-label">Số lượng</span><span class="bento-kv-value">${fmt(r.input.quantity)} túi</span></div>
-          <div class="bento-kv"><span class="bento-kv-label">Kích thước</span><span class="bento-kv-value">${+(r.input.spreadWidth*100).toFixed(1)}×${+(r.input.cutStep*100).toFixed(1)} cm</span></div>
-          <div class="bento-kv"><span class="bento-kv-label">Độ dầy</span><span class="bento-kv-value">${r.totalThickness} mic</span></div>
-          <div class="bento-kv"><span class="bento-kv-label">Trọng lượng</span><span class="bento-kv-value">${fmt(r.tareWeight,2)} gr/cái</span></div>
-          <div class="bento-kv"><span class="bento-kv-label">Tổng TL</span><span class="bento-kv-value">${fmt(r.tareWeight * r.input.quantity / 1000,1)} kg</span></div>
+          <div class="bento-kv"><span class="bento-kv-label">Kích thước</span><span class="bento-kv-value">${+(r.input.spreadWidth * 1000).toFixed(0)}×${+(r.input.cutStep * 1000).toFixed(0)} mm²</span></div>
+          <div class="bento-kv"><span class="bento-kv-label">Độ dày</span><span class="bento-kv-value">${r.totalThickness} mic</span></div>
+          <div class="bento-kv"><span class="bento-kv-label">Trọng lượng</span><span class="bento-kv-value">${fmt(r.tareWeight, 2)} gr/cái</span></div>
+          <div class="bento-kv"><span class="bento-kv-label">Tổng TL</span><span class="bento-kv-value">${fmt(r.tareWeight * r.input.quantity / 1000, 1)} kg</span></div>
           <div class="bento-kv"><span class="bento-kv-label">Diện tích</span><span class="bento-kv-value">${fmtM2(r.bagArea)}</span></div>
         </div>
       </div>
@@ -1038,11 +1088,7 @@ function renderBentoView(r) {
         <div class="bento-metric-value">${fmt(r.cylinderCost / 1000000, 1)}<span style="font-size:0.5em;opacity:0.7">tr</span></div>
         <div class="bento-metric-sub">tính riêng</div>
       </div>
-      <div class="bento-tile bento-metric bento-pink">
-        <div class="bento-metric-label">Thời Gian SX</div>
-        <div class="bento-metric-value">${r.productionDays}</div>
-        <div class="bento-metric-sub">ngày</div>
-      </div>
+
       <div class="bento-tile bento-metric bento-accent">
         <div class="bento-metric-label">Tổng Giá Vốn SX</div>
         <div class="bento-metric-value">${fmt(total / 1000000, 1)}<span style="font-size:0.5em;opacity:0.7">tr</span></div>
@@ -1097,7 +1143,7 @@ function renderHistory() {
 
   const filtered = searchVal
     ? list.filter(h => [h.customer, h.productName, h.structure, String(h.finalPrice)]
-        .some(s => s && s.toLowerCase().includes(searchVal)))
+      .some(s => s && s.toLowerCase().includes(searchVal)))
     : list;
 
   if (!filtered.length) {
@@ -1135,7 +1181,7 @@ function loadFromHistory(id) {
     document.getElementById('bagType').value = inp.bagType || '';
   }
   handleSubType();
-  setFmtValue('quantity', inp.quantity || 30000);
+  setFmtValue('quantity', inp.quantity || 0);
   document.getElementById('numColors').value = inp.numColors != null ? inp.numColors : 4;
   document.getElementById('layer1').value = inp.layer1Id || 'PET';
   document.getElementById('layer2').value = inp.layer2Id || '';
@@ -1198,12 +1244,12 @@ function saveChotGia() {
 function resetForm() {
   document.getElementById('customer').value = '';
   document.getElementById('productName').value = '';
-  setFmtValue('quantity', 30000);
+  document.getElementById('quantity').value = '';
   document.getElementById('numColors').value = 4;
-  document.getElementById('layer1').selectedIndex = 0;
+  document.getElementById('layer1').value = '';
   document.getElementById('layer2').value = '';
   document.getElementById('layer3').value = '';
-  document.getElementById('layer4').value = 'LLDPE';
+  document.getElementById('layer4').value = '';
   document.getElementById('spreadWidth').value = 0.53;
   document.getElementById('cutStep').value = 0.145;
   document.getElementById('hasNhu').checked = false;
@@ -1243,11 +1289,11 @@ function copyResult() {
   const r = currentResult;
   const text = [
     `${r.input.customer} — ${r.input.productName}`,
-    `Cấu trúc: ${r.structureText} | Độ dầy: ${r.totalThickness}mic`,
-    `SL: ${fmt(r.input.quantity)} túi | KT: ${r.input.spreadWidth*100}×${r.input.cutStep*100}cm`,
+    `Cấu trúc: ${r.structureText} | Độ dày: ${r.totalThickness}mic`,
+    `SL: ${fmt(r.input.quantity)} túi | KT: ${+(r.input.spreadWidth * 1000).toFixed(0)}×${+(r.input.cutStep * 1000).toFixed(0)} mm²`,
     `GIÁ ĐỀ XUẤT: ${fmt(r.finalPrice, 0)} đ/túi (chưa VAT)`,
-    `Giá vốn: ${fmt(r.costPerUnit, 1)} | LN: ${fmtPercent(r.profitRate)} | DT: ${fmt(r.revenue/1000000,1)}tr`,
-    `Trục in: ${fmt(r.cylinderCost/1000000,1)}tr (riêng) | TGSX: ${r.productionDays} ngày`,
+    `Giá vốn: ${fmt(r.costPerUnit, 1)} | LN: ${fmtPercent(r.profitRate)} | DT: ${fmt(r.revenue / 1000000, 1)}tr`,
+    `Trục in: ${fmt(r.cylinderCost / 1000000, 1)}tr (riêng)`,
   ].join('\n');
   navigator.clipboard.writeText(text).then(() => {
     showToast('Đã copy kết quả!', 'success');
@@ -1269,33 +1315,33 @@ function exportResult() {
     `Sản phẩm: ${r.input.productName}`,
     `Cấu trúc: ${r.structureText}`,
     `Số lượng: ${fmt(r.input.quantity)} túi`,
-    `Kích thước: ${r.input.spreadWidth*100}cm × ${r.input.cutStep*100}cm`,
-    `Độ dầy: ${r.totalThickness} mic`,
+    `Kích thước: ${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`,
+    `Độ dày: ${r.totalThickness} mic`,
     `Trọng lượng: ${fmt(r.tareWeight, 2)} gr/cái`,
     '',
     'CHI TIẾT GIÁ BÁN / TÚI',
     '─'.repeat(40),
-    `Giá vốn + LN:  ${fmt(r.costPerUnit,1)} đ`,
-    `Zipper:         ${fmt(r.zipperPerUnit,1)} đ`,
-    `Thùng giấy:     ${fmt(r.boxPerUnit,1)} đ`,
-    `Vận chuyển:     ${fmt(r.shippingPerUnit,1)} đ`,
-    `Lãi vay:        ${fmt(r.interestPerUnit,1)} đ`,
-    `Hoa hồng:       ${fmt(r.commissionPerUnit,1)} đ`,
+    `Giá vốn + LN:  ${fmt(r.costPerUnit, 1)} đ`,
+    `Zipper:         ${fmt(r.zipperPerUnit, 1)} đ`,
+    `Thùng giấy:     ${fmt(r.boxPerUnit, 1)} đ`,
+    `Vận chuyển:     ${fmt(r.shippingPerUnit, 1)} đ`,
+    `Lãi vay:        ${fmt(r.interestPerUnit, 1)} đ`,
+    `Hoa hồng:       ${fmt(r.commissionPerUnit, 1)} đ`,
     '─'.repeat(40),
-    `GIÁ ĐỀ XUẤT:   ${fmt(r.finalPrice,0)} đ/túi (chưa VAT)`,
-    chotGia ? `GIÁ CHỐT:       ${fmt(chotGia,0)} đ/túi` : '',
+    `GIÁ ĐỀ XUẤT:   ${fmt(r.finalPrice, 0)} đ/túi (chưa VAT)`,
+    chotGia ? `GIÁ CHỐT:       ${fmt(chotGia, 0)} đ/túi` : '',
     '',
     `Tỉ lệ LN: ${fmtPercent(r.profitRate)}`,
     `Doanh thu túi: ${fmt(r.revenue)} đ`,
     `Giá trục in: ${fmt(r.cylinderCost)} đ (riêng)`,
-    `Thời gian SX: ${r.productionDays} ngày`,
+
   ].filter(Boolean).join('\n');
 
   const blob = new Blob(['\ufeff' + text], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `BaoGia_${r.input.customer}_${r.input.productName}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.download = `BaoGia_${r.input.customer}_${r.input.productName}_${new Date().toISOString().slice(0, 10)}.txt`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Đã xuất file báo giá!', 'success');
@@ -1315,7 +1361,7 @@ function exportHistory() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `LichSu_BaoGia_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `LichSu_BaoGia_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Đã xuất lịch sử CSV!', 'success');
@@ -1423,6 +1469,69 @@ function updateInkPrice(input) {
   saveMaterialConfig();
 }
 
+// ── Print Waste Table ──
+function renderPrintWasteTable() {
+  const tbody = document.getElementById('printWasteBody');
+  if (!tbody) return;
+
+  const elCHeader = document.getElementById('cfgWasteC_header');
+  if (elCHeader) elCHeader.value = CONSTANTS.printWasteC;
+
+  const elAHeader = document.getElementById('cfgWasteA_header');
+  if (elAHeader) elAHeader.value = CONSTANTS.printWasteA;
+
+  let rows = '';
+  // 8 colors down to 1
+  for (let i = 8; i >= 1; i--) {
+    let row = `<tr>
+      <td>${i} màu</td>
+      <td><input class="config-inline-input" type="number" style="width:70px"
+                 id="cfgSetup_${i}" value="${CONSTANTS.colorSetup[i]}"
+                 onchange="updatePrintWasteConfig()"></td>
+      <td style="text-align: center; vertical-align: middle;">
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px;">
+          <span style="font-size: 0.9em; color: var(--text);">CD / ${CONSTANTS.printWasteA}</span>
+          <span style="font-size: 0.9em; color: var(--muted)">×</span>
+          <input type="number" class="config-inline-input" style="width:75px" id="cfgWasteB_${i}" value="${CONSTANTS.printWasteB}" onchange="updatePrintWasteConfig(${i})">
+        </div>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px;">
+          <span style="font-size: 0.9em; color: var(--text);">+ CD / ${CONSTANTS.printWasteC}</span>
+          <span style="font-size: 0.9em; color: var(--muted)">×</span>
+          <input type="number" class="config-inline-input" style="width:75px" id="cfgWasteD_${i}" value="${CONSTANTS.printWasteD}" onchange="updatePrintWasteConfig(${i})">
+        </div>
+      </td>
+    </tr>`;
+    rows += row;
+  }
+  tbody.innerHTML = rows;
+}
+
+function updatePrintWasteConfig(changedRowIndex) {
+  for (let i = 1; i <= 8; i++) {
+    const el = document.getElementById('cfgSetup_' + i);
+    if (el) CONSTANTS.colorSetup[i] = parseFloat(el.value) || 0;
+  }
+
+  const elC = document.getElementById('cfgWasteC_header');
+  if (elC) CONSTANTS.printWasteC = parseFloat(elC.value) || 0;
+
+  const elA = document.getElementById('cfgWasteA_header');
+  if (elA) CONSTANTS.printWasteA = parseFloat(elA.value) || 0;
+
+  const idx = (changedRowIndex === 'header') ? 8 : (changedRowIndex || 8);
+  const elB = document.getElementById('cfgWasteB_' + idx);
+  const elD = document.getElementById('cfgWasteD_' + idx);
+
+  if (elB) CONSTANTS.printWasteB = parseFloat(elB.value) || 0;
+  if (elD) CONSTANTS.printWasteD = parseFloat(elD.value) || 0;
+
+  saveMaterialConfig();
+  renderPrintWasteTable(); // Sync all other rows to display the same values
+  showToast('Đã cập nhật phi hao in!', 'success');
+}
+
 function updateLayerDropdowns() {
   [1, 2, 3, 4].forEach(i => {
     const sel = document.getElementById('layer' + i);
@@ -1449,8 +1558,16 @@ function resetMaterialPrices() {
     MATERIALS[i].inkPricePerColor = def.inkPricePerColor;
     MATERIALS[i].pricePerM2 = MATERIALS[i].pricePerKg * MATERIALS[i].thickness * MATERIALS[i].density / 1000;
   });
+  // Revert CONSTANTS print waste table logic missing defaults
+  CONSTANTS.colorSetup = { 1: 400, 2: 500, 3: 800, 4: 1000, 5: 1200, 6: 1500, 7: 1700, 8: 1800 };
+  CONSTANTS.printWasteA = 6000;
+  CONSTANTS.printWasteB = 40;
+  CONSTANTS.printWasteC = 50000;
+  CONSTANTS.printWasteD = 400;
+
   renderMaterialPriceTable();
   renderInkPriceTable();
+  renderPrintWasteTable();
   updateLayerDropdowns();
   localStorage.removeItem('lts_material_config');
   showToast('Đã reset tất cả giá về mặc định!', 'success');
@@ -1463,6 +1580,24 @@ function populateCPSXInputs() {
   document.getElementById('cfgCylinderPrice').value = dotFmt(CONSTANTS.cylinderPricePerUnit);
   document.getElementById('cfgNhuPrice').value = dotFmt(CONSTANTS.nhuPrice);
   document.getElementById('cfgMoPrice').value = dotFmt(CONSTANTS.moPrice);
+  // Cutting params
+  document.getElementById('cfgCutThreshold1').value = CONSTANTS.cutThreshold1 || 0.07;
+  document.getElementById('cfgCutThreshold2').value = CONSTANTS.cutThreshold2 || 0.2;
+  document.getElementById('cfgCutMult1').value = CONSTANTS.cutMult1 || 1.4;
+  document.getElementById('cfgCutMult2').value = CONSTANTS.cutMult2 || 1.2;
+  document.getElementById('cfgCutMult3').value = CONSTANTS.cutMult3 || 0.8;
+  updateCutPreviews();
+}
+
+function updateCutPreviews() {
+  const base = CONSTANTS.cutBase || 971;
+  const m1 = CONSTANTS.cutMult1 || 1.4;
+  const m2 = CONSTANTS.cutMult2 || 1.2;
+  const m3 = CONSTANTS.cutMult3 || 0.8;
+  const fmt = v => v % 1 === 0 ? v.toLocaleString('vi-VN') : v.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+  document.getElementById('cutPreview1').textContent = fmt(Math.round(base * m1));
+  document.getElementById('cutPreview2').textContent = fmt(Math.round(base * m2));
+  document.getElementById('cutPreview3').textContent = fmt(Math.round(base * m3));
 }
 
 function updateCPSXConstants() {
@@ -1472,6 +1607,13 @@ function updateCPSXConstants() {
   CONSTANTS.cylinderPricePerUnit = parseDotFmt(document.getElementById('cfgCylinderPrice').value) || 7300000;
   CONSTANTS.nhuPrice = parseDotFmt(document.getElementById('cfgNhuPrice').value) || 200;
   CONSTANTS.moPrice = parseDotFmt(document.getElementById('cfgMoPrice').value) || 200;
+  // Cutting params
+  CONSTANTS.cutThreshold1 = parseFloat(document.getElementById('cfgCutThreshold1').value) || 0.07;
+  CONSTANTS.cutThreshold2 = parseFloat(document.getElementById('cfgCutThreshold2').value) || 0.2;
+  CONSTANTS.cutMult1 = parseFloat(document.getElementById('cfgCutMult1').value) || 1.4;
+  CONSTANTS.cutMult2 = parseFloat(document.getElementById('cfgCutMult2').value) || 1.2;
+  CONSTANTS.cutMult3 = parseFloat(document.getElementById('cfgCutMult3').value) || 0.8;
+  updateCutPreviews();
   saveMaterialConfig();
   showToast('Đã cập nhật!', 'success');
 }
@@ -1486,9 +1628,21 @@ function saveMaterialConfig() {
       ghepCPSX: CONSTANTS.ghepCPSX,
       laborCost: CONSTANTS.laborCost,
       cutBase: CONSTANTS.cutBase || 971,
+      cutThreshold1: CONSTANTS.cutThreshold1,
+      cutThreshold2: CONSTANTS.cutThreshold2,
+      cutMult1: CONSTANTS.cutMult1,
+      cutMult2: CONSTANTS.cutMult2,
+      cutMult3: CONSTANTS.cutMult3,
       cylinderPricePerUnit: CONSTANTS.cylinderPricePerUnit,
       nhuPrice: CONSTANTS.nhuPrice,
       moPrice: CONSTANTS.moPrice
+    },
+    printWaste: {
+      colorSetup: CONSTANTS.colorSetup,
+      A: CONSTANTS.printWasteA,
+      B: CONSTANTS.printWasteB,
+      C: CONSTANTS.printWasteC,
+      D: CONSTANTS.printWasteD
     }
   };
   localStorage.setItem('lts_material_config', JSON.stringify(data));
@@ -1514,12 +1668,22 @@ function loadMaterialConfig() {
       CONSTANTS.ghepCPSX = data.cpsx.ghepCPSX;
       CONSTANTS.laborCost = data.cpsx.laborCost ?? data.cpsx.baseCPSX ?? 318;
       CONSTANTS.cutBase = data.cpsx.cutBase;
+      if (data.cpsx.cutThreshold1 != null) CONSTANTS.cutThreshold1 = data.cpsx.cutThreshold1;
+      if (data.cpsx.cutThreshold2 != null) CONSTANTS.cutThreshold2 = data.cpsx.cutThreshold2;
+      if (data.cpsx.cutMult1 != null) CONSTANTS.cutMult1 = data.cpsx.cutMult1;
+      if (data.cpsx.cutMult2 != null) CONSTANTS.cutMult2 = data.cpsx.cutMult2;
+      if (data.cpsx.cutMult3 != null) CONSTANTS.cutMult3 = data.cpsx.cutMult3;
       CONSTANTS.cylinderPricePerUnit = data.cpsx.cylinderPricePerUnit;
       if (data.cpsx.nhuPrice != null) CONSTANTS.nhuPrice = data.cpsx.nhuPrice;
       if (data.cpsx.moPrice != null) CONSTANTS.moPrice = data.cpsx.moPrice;
     }
+    // Backward compatibility & new property loads
+    if (data.printWaste) {
+      if (data.printWaste.colorSetup) CONSTANTS.colorSetup = data.printWaste.colorSetup;
+      if (data.printWaste.A != null) CONSTANTS.printWasteA = data.printWaste.A;
+      if (data.printWaste.B != null) CONSTANTS.printWasteB = data.printWaste.B;
+      if (data.printWaste.C != null) CONSTANTS.printWasteC = data.printWaste.C;
+      if (data.printWaste.D != null) CONSTANTS.printWasteD = data.printWaste.D;
+    }
   } catch (e) { /* ignore corrupt data */ }
 }
-
-// Load config on startup
-loadMaterialConfig();

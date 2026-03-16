@@ -1173,6 +1173,44 @@ body {
   box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
 }
 
+/* ═══════════ CONFIG GROUP HEADERS ═══════════ */
+.config-group-header {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  padding: 14px 0 6px;
+  margin-top: 18px;
+  border-bottom: 2px solid var(--accent);
+  margin-bottom: 14px;
+  letter-spacing: 0.02em;
+}
+.config-group-header:first-of-type { margin-top: 0; }
+
+/* ═══════════ CONFIG INLINE INPUTS (cutting table) ═══════════ */
+.config-inline-input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  font-size: 0.88rem;
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  text-align: center;
+  transition: border 0.2s;
+}
+.config-inline-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+}
+.cut-preview {
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
 /* ═══════════ PRINT ═══════════ */
 @media print {
   body { background: white !important; color: black !important; }
@@ -1183,3 +1221,8 @@ body {
   .price-hero { background: #f3f4f6 !important; }
   .price-hero .value { -webkit-text-fill-color: #1f2937 !important; }
 }
+
+/* ════ Manager TOC Offset ════ */
+.manager-section-anchor { scroll-margin-top: 100px; display: block; }
+.manager-toc .toc-link { transition: all 0.2s; }
+.manager-toc .toc-link:hover { opacity: 0.8; background: var(--surface2) !important; color: var(--accent) !important; padding-left: 16px !important; }

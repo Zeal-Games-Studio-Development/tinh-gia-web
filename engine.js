@@ -108,9 +108,15 @@ function calculate(input) {
   // ── 4. CPSX IN - Lớp 1 (ngoài) ──
   const printNLWidth = cutWidth + 0.02;
   const printMeters = cutMeters + cutWaste + totalLamWaste;
-  const colorSetup = COLOR_SETUP[numColors] || 400;
-  const printWaste = colorSetup + (printMeters / 6000 * 40)
-    + (printMeters > 50000 ? printMeters / 50000 * 400 : 0);
+  // Fallbacks: defaults to the values requested by user if somehow undefined
+  const cSetup = CONSTANTS.colorSetup[numColors] || (numColors * 200 + 200); 
+  const pA = CONSTANTS.printWasteA || 6000;
+  const pB = CONSTANTS.printWasteB || 40;
+  const pC = CONSTANTS.printWasteC || 50000;
+  const pD = CONSTANTS.printWasteD || 400;
+  
+  const printWaste = cSetup + (printMeters / pA * pB)
+    + (printMeters > pC ? printMeters / pC * pD : 0);
   const inkPrice = layer1.inkPricePerColor || (layer1.isPETorPA ? 135 : 120);
   const printCPSX = numColors * inkPrice * coverageRatio
     + CONSTANTS.laborCost + metallicSurcharge;
@@ -121,9 +127,14 @@ function calculate(input) {
   // ── 5. CPSX CẮT chi phí ──
   let cutCPSX;
   const cutBase = CONSTANTS.cutBase || 971;
-  if (bagArea < 0.07)      cutCPSX = cutBase * 1.4;
-  else if (bagArea < 0.2)  cutCPSX = cutBase * 1.2;
-  else                     cutCPSX = cutBase * 0.8;
+  const cutT1 = CONSTANTS.cutThreshold1 || 0.07;
+  const cutT2 = CONSTANTS.cutThreshold2 || 0.2;
+  const cutM1 = CONSTANTS.cutMult1 || 1.4;
+  const cutM2 = CONSTANTS.cutMult2 || 1.2;
+  const cutM3 = CONSTANTS.cutMult3 || 0.8;
+  if (bagArea < cutT1)           cutCPSX = cutBase * cutM1;
+  else if (bagArea < cutT2)      cutCPSX = cutBase * cutM2;
+  else                           cutCPSX = cutBase * cutM3;
   const cutCostCPSX = cutCPSX * (cutWaste + cutMeters) * cutWidth;
   const cutTotalCost = cutCostCPSX;
 
