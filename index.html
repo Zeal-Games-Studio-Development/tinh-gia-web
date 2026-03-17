@@ -378,6 +378,134 @@
               <table class="moq-table" id="moq-roll-table"></table>
             </div>
 
+            <!-- SECTION: Bảng Báo Giá -->
+            <div id="sect-quote" class="manager-section-anchor"></div>
+            <div class="card" style="margin-top:14px; margin-bottom: 20px;">
+              <div class="card-title"><span class="icon">📋</span> Bảng báo giá</div>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 12px; border-bottom: 4px double #9e9e9e; padding-bottom: 16px; margin-bottom: 24px;">
+                <!-- Logo -->
+                <img src="images/untitled-10.png" alt="Logo LTS" style="height: 60px; object-fit: contain; flex-shrink: 0; margin-top: 12px;">
+                <!-- Thông tin cty -->
+                <div style="text-align: center;">
+                  <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; font-weight: 800; color: #000; text-transform: uppercase;">
+                    CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ SẢN XUẤT BAO BÌ LAI TRƯỜNG SƠN - LONG AN
+                  </h3>
+                  <div style="font-size: 0.9rem; color: #000; font-style: italic; margin-bottom: 2px;">
+                    Địa chỉ: Số 36 Đường Ấp 7B, Xã Mỹ Yên, Tỉnh Tây Ninh, Việt Nam
+                  </div>
+                  <div style="font-size: 0.9rem; color: #000;">
+                    Mã số thuế: 1101904518 <span style="margin: 0 8px;">-</span> Email: <span style="color: blue;">baobilaitruongson.la@gmail.com</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="text-align: center; margin-bottom: 24px;">
+                <h2 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;">BẢNG BÁO GIÁ</h2>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Kính gửi CTY</label>
+                  <input type="text" class="form-input" id="quoteCustomer" style="background: var(--surface2); font-weight: 600;" readonly>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Mã số thuế</label>
+                  <input type="text" class="form-input" id="quoteTaxId" placeholder="Nhập mã số thuế...">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Địa chỉ</label>
+                <input type="text" class="form-input" id="quoteAddress" placeholder="Nhập địa chỉ...">
+              </div>
+
+              <div style="margin: 18px 0 14px; font-size: 0.9rem;">
+                Chúng tôi xin trân trọng gửi đến quý khách hàng bảng báo giá chi tiết như sau:
+              </div>
+
+              <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 16px;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Tên sản phẩm</label>
+                    <input type="text" class="form-input" id="quoteProductName" style="font-weight: 600;" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Màu in</label>
+                    <input type="text" class="form-input" id="quoteColors" readonly>
+                  </div>
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Chất liệu</label>
+                    <input type="text" class="form-input" id="quoteMaterial" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Độ dày (mic)</label>
+                    <input type="text" class="form-input" id="quoteThickness" placeholder="Nhập độ dày (có thể sửa). VD: 100">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Quy cách túi</label>
+                    <input type="text" class="form-input" id="quoteSize" placeholder="Nhập quy cách...">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Thông tin khác</label>
+                    <input type="text" class="form-input" id="quoteOtherInfo" placeholder="Nhập thông tin khác (nếu có)...">
+                  </div>
+                </div>
+              </div>
+
+              <div style="overflow-x: auto; margin-bottom: 20px;">
+                <table class="data-table" id="quote-table">
+                  <thead>
+                    <tr>
+                      <th>Hạng mục</th>
+                      <th class="num">Số lượng</th>
+                      <th class="num">Đơn vị</th>
+                      <th class="num">Đơn giá</th>
+                      <th class="num">Thành tiền</th>
+                      <th class="num">VAT</th>
+                    </tr>
+                  </thead>
+                  <tbody id="quote-table-body">
+                    <!-- Rendered via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="background: rgba(79,70,229,0.03); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+                <div style="font-weight: 700; color: var(--accent); margin-bottom: 10px; font-size: 0.85rem; text-transform: uppercase;">Lưu ý</div>
+                <div style="font-size: 0.85rem; margin-bottom: 16px; padding-left: 14px; position: relative;">
+                  <span style="position: absolute; left: 0; top: 0;">-</span>
+                  Số lượng giao hàng thực tế có thể tăng giảm 10% so với đơn đặt hàng => giá trị đơn hàng theo số lượng giao hàng thực tế.
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Thanh toán</label>
+                    <input type="text" class="form-input" id="quotePayment" placeholder="Nhập hình thức thanh toán...">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Thời gian giao hàng</label>
+                    <input type="text" class="form-input" id="quoteDeliveryTime" placeholder="Nhập thời gian giao hàng...">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Ghi chú kỹ thuật</label>
+                  <textarea class="form-input" id="quoteTechNote" rows="2" placeholder="Nhập ghi chú kỹ thuật..."></textarea>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label">Khác (Để trống nếu không hiển thị)</label>
+                  <textarea class="form-input" id="quoteOtherNote" rows="2" placeholder="Nhập các lưu ý khác..."></textarea>
+                </div>
+              </div>
+
+            </div>
+
           </div> <!-- End manager-content -->
 
           <!-- RIGHT: Floating TOC Sub-Menu -->
@@ -386,7 +514,8 @@
             <a href="#sect-sale" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">1. Báo Giá Gợi Ý</a>
             <a href="#sect-cost" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">2. Cơ Cấu Chi Phí</a>
             <a href="#sect-tech" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">3. Thông Số Kỹ Thuật</a>
-            <a href="#sect-moq" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">4. Bảng Kế Hoạch Đặt (MOQ)</a>
+            <a href="#sect-moq" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">4. Bảng MOQ</a>
+            <a href="#sect-quote" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">5. Bảng Báo Giá</a>
           </div>
 
         </div> <!-- End manager-layout -->

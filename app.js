@@ -463,6 +463,7 @@ function doCalculate(silent = false) {
   renderManagerView(currentResult);
   renderTechView(currentResult);
   renderMOQView(currentResult); // always render MOQ now since it is part of Manager view
+  renderQuoteView(currentResult);
 
   const activeTab = document.querySelector('.tab.active');
   const view = activeTab ? activeTab.dataset.view : 'manager';
@@ -1714,4 +1715,69 @@ function loadMaterialConfig() {
       if (data.printWaste.D != null) CONSTANTS.printWasteD = data.printWaste.D;
     }
   } catch (e) { /* ignore corrupt data */ }
+}
+
+// ══════════════════════════════════════════════
+// QUOTE VIEW RENDER
+// ══════════════════════════════════════════════
+function renderQuoteView(r) {
+  document.getElementById('quoteCustomer').value = r.input.customer === 'N/A' ? '' : r.input.customer;
+  document.getElementById('quoteProductName').value = r.input.productName === 'N/A' ? '' : r.input.productName;
+  document.getElementById('quoteColors').value = r.input.numColors ? `${r.input.numColors} màu` : 'Không in';
+  
+  // Format material string
+  const mats = [];
+  if (r.layers.print) mats.push(r.layers.print.material.name.split(' ')[0]);
+  if (r.layers.lam3) mats.push(r.layers.lam3.material.name.split(' ')[0]);
+  if (r.layers.lam2) mats.push(r.layers.lam2.material.name.split(' ')[0]);
+  if (r.layers.lam1) mats.push(r.layers.lam1.material.name.split(' ')[0]);
+  document.getElementById('quoteMaterial').value = mats.join(' / ');
+  
+  // Custom thickness (can be modified by user, only set if empty)
+  if (!document.getElementById('quoteThickness').value) {
+    document.getElementById('quoteThickness').value = r.totalThickness;
+  }
+  
+  // Default sizes from input
+  if (!document.getElementById('quoteSize').value) {
+    const w = r.input.spreadWidth * 1000;
+    const l = r.input.cutStep * 1000;
+    document.getElementById('quoteSize').value = `${w.toFixed(0)} x ${l.toFixed(0)} mm`;
+  }
+  
+  // Generate Table Body
+  // rows: Túi (productType === 'tui') or Màng (productType === 'mang')
+  const isBag = r.input.productType === 'tui';
+  const unit = isBag ? 'Túi' : 'Kg';
+  const vatRate = isBag ? 8 : 8; // Both 8% as per notes (túi / màng = 8%)
+  const vatText = '8%';
+  const price = r.finalPrice;
+  const qty = r.input.quantity;
+  const total = price * qty;
+  
+  let html = `
+    <tr>
+      <td>${isBag ? 'Túi bao bì' : 'Màng bao bì'}</td>
+      <td class="num">${fmt(qty)}</td>
+      <td class="num">${unit}</td>
+      <td class="num">${fmt(price)} đ</td>
+      <td class="num highlight">${fmt(total)} đ</td>
+      <td class="num">${vatText}</td>
+    </tr>
+  `;
+  
+  if (r.input.numColors > 0 && r.cylinderCost > 0) {
+    html += `
+    <tr>
+      <td>Trục in (${r.input.numColors} màu)</td>
+      <td class="num">1</td>
+      <td class="num">Bộ</td>
+      <td class="num">${fmt(r.cylinderCost)} đ</td>
+      <td class="num highlight">${fmt(r.cylinderCost)} đ</td>
+      <td class="num">10%</td>
+    </tr>
+    `;
+  }
+  
+  document.getElementById('quote-table-body').innerHTML = html;
 }
