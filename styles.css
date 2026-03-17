@@ -49,6 +49,7 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; scroll-behavior: smooth; }
+.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg);
@@ -1080,7 +1081,7 @@ body {
   .tab { padding: 6px 10px; font-size: 0.78rem; }
   .price-hero .value { font-size: 2rem; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .form-row-3 { grid-template-columns: 1fr; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
   .data-table { font-size: 0.75rem; }
   .data-table th, .data-table td { padding: 7px 6px; }
   .chot-gia-row { flex-direction: column; }
@@ -1262,6 +1263,8 @@ body {
 .manager-toc .toc-link { transition: all 0.2s; }
 .manager-toc .toc-link:hover { opacity: 0.8; background: var(--surface2) !important; color: var(--accent) !important; padding-left: 16px !important; }
 
+.manager-content { padding-right: 220px; }
+
 @media (max-width: 1200px) {
   .manager-toc {
     position: static !important;
@@ -1269,4 +1272,13 @@ body {
     margin-bottom: 20px;
     box-shadow: none !important;
   }
+  .manager-content { padding-right: 0; }
+}
+
+@media (max-width: 640px) {
+  .quote-header { flex-direction: column; text-align: center; }
+  .quote-header img { height: 50px !important; }
+  #inputCard, .card, .history-item { padding: 12px; }
+  .chot-gia-row .btn { width: 100%; margin-top: 6px; }
+  .config-card { padding: 16px 14px; }
 }

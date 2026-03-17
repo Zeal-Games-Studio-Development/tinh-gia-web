@@ -317,7 +317,7 @@
         <div class="manager-layout" style="position:relative;">
           
           <!-- LEFT: Main Manager Content (Scrollable with sections) -->
-          <div class="manager-content" style="padding-right: 220px;">
+          <div class="manager-content">
             
             <!-- SECTION: Báo Giá Gợi Ý (formerly Sale) -->
             <div id="sect-sale" class="manager-section-anchor"></div>
@@ -356,7 +356,9 @@
               <div class="card-title"><span class="icon">📊</span> Cơ cấu giá vốn sản xuất</div>
               <div class="cost-bar" id="m-costbar"></div>
               <div class="cost-legend" id="m-legend"></div>
-              <table class="data-table" id="m-cost-table" style="margin-top:14px"></table>
+              <div class="table-responsive">
+                <table class="data-table" id="m-cost-table" style="margin-top:14px"></table>
+              </div>
             </div>
             <div class="card" style="margin-bottom:14px">
               <div class="card-title"><span class="icon">📈</span> Phân tích lợi nhuận</div>
@@ -364,7 +366,9 @@
             </div>
             <div class="card">
               <div class="card-title"><span class="icon">💵</span> Chi phí phụ tổng</div>
-              <table class="data-table" id="m-extra-table"></table>
+              <div class="table-responsive">
+                <table class="data-table" id="m-extra-table"></table>
+              </div>
             </div>
 
             <!-- SECTION: Thông Tin Kỹ Thuật (Manager) -->
@@ -376,7 +380,7 @@
             <div class="stat-grid" id="m-t-stats"></div>
             <div class="card" style="margin-bottom:14px">
               <div class="card-title"><span class="icon">🏭</span> Đặc tả kỹ thuật & nguyên liệu</div>
-              <div style="overflow-x:auto">
+              <div class="table-responsive">
                 <table class="data-table" id="m-t-unified-table"></table>
               </div>
             </div>
@@ -393,7 +397,9 @@
                 <span class="icon">💡</span>
                 So sánh giá khi thay đổi số lượng đặt hàng. Dòng tô sáng là số lượng hiện tại.
               </div>
-              <table class="moq-table" id="moq-table"></table>
+              <div class="table-responsive">
+                <table class="moq-table" id="moq-table"></table>
+              </div>
             </div>
             <div class="card">
               <div class="card-title"><span class="icon">🎞️</span> MOQ theo cuộn màng</div>
@@ -401,14 +407,16 @@
                 <span class="icon">💡</span>
                 Số lượng tối ưu theo cuộn màng tiêu chuẩn của lớp in. Giúp đặt hàng khớp cuộn, giảm hao hụt.
               </div>
-              <table class="moq-table" id="moq-roll-table"></table>
+              <div class="table-responsive">
+                <table class="moq-table" id="moq-roll-table"></table>
+              </div>
             </div>
 
             <!-- SECTION: Bảng Báo Giá -->
             <div id="sect-quote" class="manager-section-anchor"></div>
             <div class="card" style="margin-top:14px; margin-bottom: 20px; display: none;">
               <div class="card-title"><span class="icon">📋</span> Bảng báo giá</div>
-              <div style="display: flex; align-items: center; justify-content: center; gap: 12px; border-bottom: 4px double #9e9e9e; padding-bottom: 16px; margin-bottom: 24px;">
+              <div class="quote-header" style="display: flex; align-items: center; justify-content: center; gap: 12px; border-bottom: 4px double #9e9e9e; padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap;">
                 <!-- Logo -->
                 <img src="images/untitled-10.png" alt="Logo LTS" style="height: 60px; object-fit: contain; flex-shrink: 0; margin-top: 12px;">
                 <!-- Thông tin cty -->
@@ -483,7 +491,7 @@
                 </div>
               </div>
 
-              <div style="overflow-x: auto; margin-bottom: 20px;">
+              <div class="table-responsive" style="margin-bottom: 20px;">
                 <table class="data-table" id="quote-table">
                   <thead>
                     <tr>
@@ -556,7 +564,7 @@
         <div class="stat-grid" id="t-stats"></div>
         <div class="card" style="margin-bottom:14px">
           <div class="card-title"><span class="icon">🏭</span> Chi tiết sản xuất & nguyên liệu</div>
-          <div style="overflow-x:auto">
+          <div class="table-responsive">
             <table class="data-table" id="t-unified-table"></table>
           </div>
         </div>
