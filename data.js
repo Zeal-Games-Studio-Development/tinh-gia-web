@@ -19,6 +19,7 @@ const MATERIALS = [
   { id: 'CPP50', group: 'CPP', name: 'CPP', density: 0.92, thickness: 50, pricePerKg: 41667, isPETorPA: false, rollLength: 6000, inkPricePerColor: 0 },
   { id: 'MCPP25', group: 'MCPP', name: 'MCPP', density: 0.91, thickness: 25, pricePerKg: 55556, isPETorPA: false, rollLength: 6000, inkPricePerColor: 0 },
   { id: 'MCPP50', group: 'MCPP', name: 'MCPP', density: 0.91, thickness: 50, pricePerKg: 55556, isPETorPA: false, rollLength: 6000, inkPricePerColor: 0 },
+  { id: 'MPET', name: 'MPET', density: 1.4, thickness: 12, pricePerKg: 48148, isPETorPA: false, rollLength: 6000, inkPricePerColor: 0 },
 ];
 
 // Tính giá VNĐ/m² = pricePerKg × thickness × density / 1000
