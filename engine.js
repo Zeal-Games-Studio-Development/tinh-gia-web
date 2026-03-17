@@ -109,17 +109,19 @@ function calculate(input) {
   const printNLWidth = cutWidth + 0.02;
   const printMeters = cutMeters + cutWaste + totalLamWaste;
   // Fallbacks: defaults to the values requested by user if somehow undefined
-  const cSetup = CONSTANTS.colorSetup[numColors] || (numColors * 200 + 200); 
+  const cSetup = numColors > 0 ? (CONSTANTS.colorSetup[numColors] || (numColors * 200 + 200)) : 0; 
   const pA = CONSTANTS.printWasteA || 6000;
   const pB = CONSTANTS.printWasteB || 40;
   const pC = CONSTANTS.printWasteC || 50000;
   const pD = CONSTANTS.printWasteD || 400;
   
-  const printWaste = cSetup + (printMeters / pA * pB)
-    + (printMeters > pC ? printMeters / pC * pD : 0);
+  const printWaste = numColors > 0 
+    ? (cSetup + (printMeters / pA * pB) + (printMeters > pC ? printMeters / pC * pD : 0)) 
+    : 0;
   const inkPrice = layer1.inkPricePerColor || (layer1.isPETorPA ? 135 : 120);
-  const printCPSX = numColors * inkPrice * coverageRatio
-    + CONSTANTS.laborCost + metallicSurcharge;
+  const printCPSX = numColors > 0 
+    ? (numColors * inkPrice * coverageRatio + CONSTANTS.laborCost + metallicSurcharge) 
+    : 0;
   const printCostCPSX = printCPSX * (printWaste + printMeters) * printNLWidth;
   const printCostMaterial = layer1.pricePerM2 * (printWaste + printMeters) * printNLWidth;
   const printTotalCost = printCostCPSX + printCostMaterial;
