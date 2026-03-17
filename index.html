@@ -600,11 +600,20 @@
       <p class="config-page-subtitle">Giá trị đầu vào dùng cho tính toán sản xuất</p>
     </div>
 
-    <!-- ═══════════ NHÓM 1: CHI PHÍ KHÂU IN ═══════════ -->
-    <div class="config-group-header">🖨️ Chi Phí Khâu In</div>
+    <!-- RIGHT: Floating TOC Sub-Menu -->
+    <div class="manager-toc" style="width: 200px; position: fixed; right: 20px; top: 80px; background: var(--surface); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 90;">
+      <div style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">Mục lục</div>
+      <a href="#sect-config-nvl" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">📦 Bảng Giá NVL</a>
+      <a href="#sect-config-in" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">🖨️ Khâu In</a>
+      <a href="#sect-config-ghep" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">🔗 Khâu Ghép</a>
+      <a href="#sect-config-cat" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">✂️ Khâu Cắt</a>
+      <a href="#sect-config-loinhuan" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">💰 Lợi Nhuận</a>
+    </div>
+
+    <div class="config-content">
 
     <!-- 1.1 Bảng giá NVL -->
-    <div class="card config-card">
+    <div class="card config-card" id="sect-config-nvl" style="scroll-margin-top: 80px;">
       <div class="config-section-title">
         <span>📦 Giá Nguyên Vật Liệu Cập Nhật Hàng Ngày</span>
         <button class="btn btn-sm btn-outline" onclick="resetMaterialPrices()">🔄 Reset mặc định</button>
@@ -628,6 +637,9 @@
       </div>
       <p class="config-note">💡 Chỉnh <strong>Độ dày</strong> và <strong>Giá VNĐ/kg</strong> — giá VNĐ/m² tự động tính lại. Thay đổi sẽ áp dụng ngay cho lần tính giá tiếp theo.</p>
     </div>
+
+    <!-- ═══════════ NHÓM 1: CHI PHÍ KHÂU IN ═══════════ -->
+    <div class="config-group-header" id="sect-config-in" style="scroll-margin-top: 80px;">🖨️ Chi Phí Khâu In</div>
 
     <!-- 1.2 Bảng giá màu in -->
     <div class="card config-card">
@@ -720,7 +732,7 @@
     </div>
 
     <!-- ═══════════ NHÓM 2: CHI PHÍ KHÂU GHÉP ═══════════ -->
-    <div class="config-group-header">🔗 Chi Phí Khâu Ghép</div>
+    <div class="config-group-header" id="sect-config-ghep" style="scroll-margin-top: 80px;">🔗 Chi Phí Khâu Ghép</div>
 
     <div class="card config-card">
       <div class="config-section-title">
@@ -736,7 +748,7 @@
     </div>
 
     <!-- ═══════════ NHÓM 3: CHI PHÍ KHÂU CẮT ═══════════ -->
-    <div class="config-group-header">✂️ Chi Phí Khâu Cắt</div>
+    <div class="config-group-header" id="sect-config-cat" style="scroll-margin-top: 80px;">✂️ Chi Phí Khâu Cắt</div>
 
     <div class="card config-card">
       <div class="config-section-title">
@@ -787,7 +799,41 @@
       <p class="config-note">💡 CPSX Cắt = Cắt cơ bản × Hệ số. Ngưỡng dựa trên diện tích túi (m²).</p>
     </div>
 
-  </div>
+    <!-- ═══════════ NHÓM 4: BẢNG LỢI NHUẬN ═══════════ -->
+    <div class="config-group-header" id="sect-config-loinhuan" style="scroll-margin-top: 80px;">💰 Bảng Lợi Nhuận</div>
+
+    <div class="card config-card">
+      <div class="config-section-title" style="align-items: center;">
+        <span>📈 Tỉ Lệ Lợi Nhuận Theo Giá Vốn</span>
+        <div style="display:flex; align-items:center; gap: 8px;">
+          <span style="font-size:0.85rem; font-weight:normal; color:var(--muted)">Nhóm Khách hàng:</span>
+          <select id="configCustomerGroup" class="form-select" style="width: auto; padding: 4px 24px 4px 10px; font-weight: normal; font-size: 0.85rem;" onchange="handleProfitCustomerGroupChange()">
+            <option value="svlg">Sen Việt và Lương Gia</option>
+            <option value="other" selected>Khác</option>
+          </select>
+        </div>
+      </div>
+      <div class="config-table-wrap">
+        <table class="config-table" id="profitTable">
+          <thead>
+            <tr>
+              <th>Giá Vốn</th>
+              <th>Túi 3,4 biên, màng ghép: 2 lớp</th>
+              <th>Túi zipper, Đáy đứng, MPET, AL, giấy, màng ghép 3 lớp..</th>
+            </tr>
+          </thead>
+          <tbody id="profitTableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+      <p class="config-note">💡 Tỉ lệ lợi nhuận tự động tính từ giá vốn. Các con số này có thể chỉnh sửa và tự động lưu.</p>
+    </div>
+
+    </div>
+    </div> <!-- Stop config-content -->
+
+  </div> <!-- Stop config-page-inner -->
 </div>
 
 <script src="data.js"></script>

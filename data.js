@@ -34,19 +34,20 @@ MATERIALS.forEach(m => {
 // col2 = Túi zip, đáy đứng, 3 lớp
 // ============================================================
 const PROFIT_TABLE = [
-  { threshold: 9900000, col1: 0.50, col2: 0.80 },
-  { threshold: 19000000, col1: 0.22, col2: 0.42 },
-  { threshold: 30000000, col1: 0.17, col2: 0.27 },
-  { threshold: 40000000, col1: 0.11, col2: 0.20 },
-  { threshold: 60000000, col1: 0.08, col2: 0.19 },
-  { threshold: 80000000, col1: 0.08, col2: 0.18 },
-  { threshold: 100000000, col1: 0.075, col2: 0.17 },
-  { threshold: 150000000, col1: 0.07, col2: 0.16 },
-  { threshold: 200000000, col1: 0.07, col2: 0.16 },
-  { threshold: 300000000, col1: 0.06, col2: 0.15 },
-  { threshold: 400000000, col1: 0.05, col2: 0.15 },
-  { threshold: 600000000, col1: 0.05, col2: 0.15 },
+  { threshold: 9900000, col1: 0.53, col2: 0.83 },
+  { threshold: 19000000, col1: 0.25, col2: 0.45 },
+  { threshold: 30000000, col1: 0.20, col2: 0.30 },
+  { threshold: 40000000, col1: 0.14, col2: 0.23 },
+  { threshold: 60000000, col1: 0.11, col2: 0.22 },
+  { threshold: 80000000, col1: 0.11, col2: 0.21 },
+  { threshold: 100000000, col1: 0.105, col2: 0.20 },
+  { threshold: 150000000, col1: 0.10, col2: 0.19 },
+  { threshold: 200000000, col1: 0.10, col2: 0.19 },
+  { threshold: 300000000, col1: 0.09, col2: 0.18 },
+  { threshold: 400000000, col1: 0.08, col2: 0.18 },
+  { threshold: 600000000, col1: 0.08, col2: 0.18 },
 ];
+const PROFIT_TABLE_DEFAULTS = PROFIT_TABLE.map(row => ({...row}));
 const PROFIT_DEFAULT = { col1: 0.04, col2: 0.11 };
 
 // ============================================================
@@ -89,8 +90,16 @@ function getMaterial(id) {
 
 function lookupProfit(totalCost, column) {
   const col = column === 1 ? 'col1' : 'col2';
+  let val = PROFIT_DEFAULT[col];
   for (const row of PROFIT_TABLE) {
-    if (totalCost < row.threshold) return row[col];
+    if (totalCost < row.threshold) {
+      val = row[col];
+      break;
+    }
   }
-  return PROFIT_DEFAULT[col];
+  const cgDropdown = document.getElementById('configCustomerGroup');
+  if (cgDropdown && cgDropdown.value === 'svlg') {
+    val -= 0.03;
+  }
+  return val;
 }

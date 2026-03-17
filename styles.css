@@ -164,6 +164,39 @@ body {
 /* Layout: side-by-side (default) */
 .main-grid { display: grid; grid-template-columns: 370px 1fr; gap: 20px; align-items: start; }
 
+@media (min-width: 801px) {
+  html:not([data-layout="stacked"]):not([data-layout="bento"]):not(.in-config-page) body {
+    overflow: hidden; /* Disable page scroll, favor local scroll */
+  }
+  html:not([data-layout="stacked"]):not([data-layout="bento"]) .main-grid > #inputCard,
+  html:not([data-layout="stacked"]):not([data-layout="bento"]) .main-grid > #resultArea {
+    height: calc(100vh - 104px);
+    overflow-y: auto;
+    position: static !important;
+    padding-right: 6px; /* Space for scrollbar */
+  }
+  /* Hide scrollbar for input panel but keep functionality */
+  html:not([data-layout="stacked"]) .main-grid > #inputCard::-webkit-scrollbar {
+    display: none;
+  }
+  html:not([data-layout="stacked"]) .main-grid > #inputCard {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Custom thin scrollbar for result panel */
+  html:not([data-layout="stacked"]) .main-grid > #resultArea::-webkit-scrollbar {
+    width: 6px;
+  }
+  html:not([data-layout="stacked"]) .main-grid > #resultArea::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  html:not([data-layout="stacked"]) .main-grid > #resultArea::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+}
+
 /* Layout: top-bottom / stacked */
 [data-layout="stacked"] .main-grid { grid-template-columns: 1fr; max-width: 800px; margin: 0 auto; }
 [data-layout="stacked"] #inputCard { position: static !important; }
@@ -1070,10 +1103,12 @@ body {
 }
 
 /* Config Full Page */
-.config-page {
-  max-width: 960px; margin: 0 auto; padding: 24px 16px;
-}
-.config-page-inner { display: flex; flex-direction: column; gap: 20px; }
+.config-page { margin: 0 auto; padding: 24px 16px; position: relative; }
+.config-page-inner { display: flex; flex-direction: column; gap: 20px; position: relative; max-width: 1200px; margin: 0 auto; justify-content: center; }
+.config-content { max-width: 960px; margin: 0 auto; width: 100%; }
+
+/* removed config toc custom classes */
+
 .config-page-header {
   text-align: center; padding: 28px 20px;
   background: var(--grad); border-radius: var(--radius);
@@ -1226,3 +1261,12 @@ body {
 .manager-section-anchor { scroll-margin-top: 100px; display: block; }
 .manager-toc .toc-link { transition: all 0.2s; }
 .manager-toc .toc-link:hover { opacity: 0.8; background: var(--surface2) !important; color: var(--accent) !important; padding-left: 16px !important; }
+
+@media (max-width: 1200px) {
+  .manager-toc {
+    position: static !important;
+    width: 100% !important;
+    margin-bottom: 20px;
+    box-shadow: none !important;
+  }
+}

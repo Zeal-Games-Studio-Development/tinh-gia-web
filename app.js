@@ -426,10 +426,12 @@ function switchView(view) {
   const configPage = document.getElementById('configPage');
 
   if (view === 'config') {
+    document.documentElement.classList.add('in-config-page');
     // Hide main content, show config page
     if (mainContainer) mainContainer.style.display = 'none';
-    if (configPage) { configPage.style.display = ''; renderMaterialPriceTable(); renderInkPriceTable(); renderPrintWasteTable(); populateCPSXInputs(); }
+    if (configPage) { configPage.style.display = ''; renderMaterialPriceTable(); renderInkPriceTable(); renderPrintWasteTable(); populateCPSXInputs(); renderProfitTable(); }
   } else {
+    document.documentElement.classList.remove('in-config-page');
     // Show main content, hide config page
     if (mainContainer) mainContainer.style.display = '';
     if (configPage) { configPage.style.display = 'none'; saveMaterialConfig(); }
@@ -1641,6 +1643,66 @@ function updateLayerDropdowns() {
   });
 }
 
+function renderProfitTable() {
+  const tbody = document.getElementById('profitTableBody');
+  if (!tbody) return;
+  const fmtM2 = n => n.toLocaleString('vi-VN');
+  
+  function getRangeLabel(i, row) {
+    if (i === 0) return 'Dưới 9.900.000';
+    if (row.threshold === 19000000) return '10.000.000 - 19.000.000';
+    if (row.threshold === 30000000) return '20.000.000 - 30.000.000';
+    if (row.threshold === 40000000) return '31.000.000 - 40.000.000';
+    if (row.threshold === 60000000) return '41.000.000 - 60.000.000';
+    if (row.threshold === 80000000) return '61.000.000 - 80.000.000';
+    if (row.threshold === 100000000) return '81.000.000 - 100.000.000';
+    if (row.threshold === 150000000) return '101.000.000 - 150.000.000';
+    if (row.threshold === 200000000) return '151.000.000 - 200.000.000';
+    if (row.threshold === 300000000) return '201.000.000 - 300.000.000';
+    if (row.threshold === 400000000) return '301.000.000 - 400.000.000';
+    return `Từ ${fmtM2(PROFIT_TABLE[i-1].threshold)} - ${fmtM2(row.threshold)}`;
+  }
+  
+  const cgDropdown = document.getElementById('configCustomerGroup');
+  const isSVLG = cgDropdown && cgDropdown.value === 'svlg';
+  const offset = isSVLG ? -0.03 : 0;
+  
+  let rows = '';
+  for (let i = 0; i < PROFIT_TABLE.length; i++) {
+    const row = PROFIT_TABLE[i];
+    const label = getRangeLabel(i, row);
+    
+    rows += `<tr>
+      <td>${label}</td>
+      <td><input class="cfg-input" type="number" step="0.5" value="${+((row.col1 + offset) * 100).toFixed(2)}"
+           onchange="updateProfitConfig(${i}, 'col1', this.value)"> %</td>
+      <td><input class="cfg-input" type="number" step="0.5" value="${+((row.col2 + offset) * 100).toFixed(2)}"
+           onchange="updateProfitConfig(${i}, 'col2', this.value)"> %</td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+function handleProfitCustomerGroupChange() {
+  renderProfitTable();
+  if (typeof autoCalcCylinder === 'function') {
+    autoCalcCylinder();
+  }
+}
+
+function updateProfitConfig(idx, col, value) {
+  let val = parseFloat(value);
+  if (isNaN(val)) val = 0;
+  
+  const cgDropdown = document.getElementById('configCustomerGroup');
+  const isSVLG = cgDropdown && cgDropdown.value === 'svlg';
+  const offset = isSVLG ? -0.03 : 0;
+  
+  PROFIT_TABLE[idx][col] = (val / 100) - offset;
+  saveMaterialConfig();
+  showToast('Đã cập nhật bảng lợi nhuận!', 'success');
+}
+
 function resetMaterialPrices() {
   if (!confirm('Reset tất cả giá về mặc định?')) return;
   MATERIALS_DEFAULTS.forEach((def, i) => {
@@ -1648,6 +1710,11 @@ function resetMaterialPrices() {
     MATERIALS[i].pricePerKg = def.pricePerKg;
     MATERIALS[i].inkPricePerColor = def.inkPricePerColor;
     MATERIALS[i].pricePerM2 = MATERIALS[i].pricePerKg * MATERIALS[i].thickness * MATERIALS[i].density / 1000;
+  });
+  // Revert PROFIT_TABLE
+  PROFIT_TABLE_DEFAULTS.forEach((def, i) => {
+    PROFIT_TABLE[i].col1 = def.col1;
+    PROFIT_TABLE[i].col2 = def.col2;
   });
   // Revert CONSTANTS print waste table logic missing defaults
   CONSTANTS.colorSetup = { 1: 400, 2: 500, 3: 800, 4: 1000, 5: 1200, 6: 1500, 7: 1700, 8: 1800 };
@@ -1659,6 +1726,7 @@ function resetMaterialPrices() {
   renderMaterialPriceTable();
   renderInkPriceTable();
   renderPrintWasteTable();
+  renderProfitTable();
   updateLayerDropdowns();
   localStorage.removeItem('lts_material_config');
   showToast('Đã reset tất cả giá về mặc định!', 'success');
@@ -1734,7 +1802,8 @@ function saveMaterialConfig() {
       B: CONSTANTS.printWasteB,
       C: CONSTANTS.printWasteC,
       D: CONSTANTS.printWasteD
-    }
+    },
+    profitTable: PROFIT_TABLE.map(row => ({ col1: row.col1, col2: row.col2 }))
   };
   localStorage.setItem('lts_material_config', JSON.stringify(data));
 }
@@ -1775,6 +1844,12 @@ function loadMaterialConfig() {
       if (data.printWaste.B != null) CONSTANTS.printWasteB = data.printWaste.B;
       if (data.printWaste.C != null) CONSTANTS.printWasteC = data.printWaste.C;
       if (data.printWaste.D != null) CONSTANTS.printWasteD = data.printWaste.D;
+    }
+    if (data.profitTable && data.profitTable.length === PROFIT_TABLE.length) {
+      data.profitTable.forEach((row, idx) => {
+        PROFIT_TABLE[idx].col1 = row.col1;
+        PROFIT_TABLE[idx].col2 = row.col2;
+      });
     }
   } catch (e) { /* ignore corrupt data */ }
 }
