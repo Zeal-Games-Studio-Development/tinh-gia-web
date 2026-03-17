@@ -239,44 +239,84 @@ function validateOrderInfo() {
 // DROPDOWNS
 // ══════════════════════════════════════════════
 function populateDropdowns() {
-  const l1 = document.getElementById('layer1');
-  const l2 = document.getElementById('layer2');
-  const l3 = document.getElementById('layer3');
-  const l4 = document.getElementById('layer4');
-  const layer1Only = ['BOPP18', 'BOPP20', 'BOPP30', 'MattBOPP20'];
+  const layerSelects = [1, 2, 3, 4].map(i => document.getElementById('layer' + i));
+  const layer1OnlyGroups = ['BOPP', 'Matt BOPP'];
 
-  l1.innerHTML = '<option value="">— Chọn —</option>';
+  const groups = {};
+  const flatOptions = [];
+
   MATERIALS.forEach(m => {
-    const opt = `<option value="${m.id}">${m.name}</option>`;
-    l1.innerHTML += opt;
-    if (!layer1Only.includes(m.id)) {
-      l2.innerHTML += opt;
-      l3.innerHTML += opt;
-      l4.innerHTML += opt;
+    if (m.group) {
+      if (!groups[m.group]) groups[m.group] = [];
+      groups[m.group].push(m);
+    } else {
+      flatOptions.push(m);
     }
   });
 
-  // Setup mic adjust listeners for each layer
+  layerSelects.forEach((select, index) => {
+    if (!select) return;
+    select.innerHTML = '<option value="">— Chọn —</option>';
+    
+    flatOptions.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+    });
+
+    Object.keys(groups).forEach(g => {
+      if (index === 0 || !layer1OnlyGroups.includes(g)) {
+        select.innerHTML += `<option value="GROUP_${g}">${g}</option>`;
+      }
+    });
+
+    select.addEventListener('change', () => handleLayerChange(index + 1));
+  });
+
   [1, 2, 3, 4].forEach(i => {
-    const select = document.getElementById('layer' + i);
-    select.addEventListener('change', () => handleLayerChange(i));
+    const selectMic = document.getElementById('micSelect' + i);
+    if(selectMic) {
+      selectMic.addEventListener('change', () => {
+         updateStructurePreview();
+      });
+    }
     handleLayerChange(i); // init
   });
 }
 
 function handleLayerChange(layerNum) {
   const select = document.getElementById('layer' + layerNum);
+  if (!select) return;
   const micAdjust = document.getElementById('micAdjust' + layerNum);
   const micInput = document.getElementById('micLayer' + layerNum);
+  const micSelect = document.getElementById('micSelect' + layerNum);
   const val = select.value;
-  const mat = val ? getMaterial(val) : null;
 
-  if (mat && mat.adjustableMic) {
-    micAdjust.style.display = 'block';
-    micInput.value = mat.thickness;
+  if (val && val.startsWith('GROUP_')) {
+    const groupName = val.replace('GROUP_', '');
+    const groupItems = MATERIALS.filter(m => m.group === groupName);
+    
+    if(micAdjust) micAdjust.style.display = 'block';
+    if(micInput) micInput.style.display = 'none';
+    if(micSelect) {
+      micSelect.style.display = 'block';
+      micSelect.innerHTML = groupItems.map(m => `<option value="${m.id}">${m.thickness}</option>`).join('');
+    }
   } else {
-    micAdjust.style.display = 'none';
-    if (micInput) micInput.value = '';
+    const mat = val ? getMaterial(val) : null;
+    if (mat && mat.adjustableMic) {
+      if(micAdjust) micAdjust.style.display = 'block';
+      if(micInput) {
+        micInput.style.display = 'block';
+        micInput.value = mat.thickness;
+      }
+      if(micSelect) micSelect.style.display = 'none';
+    } else {
+      if(micAdjust) micAdjust.style.display = 'none';
+      if(micInput) {
+        micInput.style.display = 'none';
+        micInput.value = '';
+      }
+      if(micSelect) micSelect.style.display = 'none';
+    }
   }
 }
 
@@ -340,12 +380,24 @@ function autoCalcCylinder() {
 // ══════════════════════════════════════════════
 // STRUCTURE VISUAL PREVIEW
 // ══════════════════════════════════════════════
+function getActualLayerId(layerNum) {
+  const select = document.getElementById('layer' + layerNum);
+  if (!select) return null;
+  const val = select.value;
+  if (!val) return null;
+  if (val.startsWith('GROUP_')) {
+    const micSelect = document.getElementById('micSelect' + layerNum);
+    return micSelect && micSelect.style.display !== 'none' ? micSelect.value : null;
+  }
+  return val;
+}
+
 function updateStructurePreview() {
   const layers = [1, 2, 3, 4].map(i => {
-    const id = document.getElementById('layer' + i).value;
+    const id = getActualLayerId(i);
     const mat = id ? getMaterial(id) : null;
     const micInput = document.getElementById('micLayer' + i);
-    const customMic = micInput && micInput.value ? parseInt(micInput.value) : null;
+    const customMic = (micInput && micInput.style.display !== 'none' && micInput.value) ? parseInt(micInput.value) : null;
     return { mat, customMic, num: i };
   });
 
@@ -398,10 +450,14 @@ function gatherInput() {
   const micOverrides = {};
   [1, 2, 3, 4].forEach(i => {
     const micInput = document.getElementById('micLayer' + i);
-    if (micInput && micInput.value) {
+    if (micInput && micInput.style.display !== 'none' && micInput.value) {
       micOverrides['layer' + i] = parseInt(micInput.value);
     }
   });
+
+  const selectedPaymentTerm = document.querySelector('input[name="paymentTerm"]:checked')?.value || '30';
+  const paymentRateInput = document.getElementById('pt_rate_' + selectedPaymentTerm);
+  const paymentInterestRate = paymentRateInput ? parseFloat(paymentRateInput.value) / 100 : 0.0025;
 
   return {
     customer: document.getElementById('customer').value || 'N/A',
@@ -411,10 +467,10 @@ function gatherInput() {
     filmType: document.getElementById('filmType').value || '',
     quantity: getFmtValue('quantity', 0),
     numColors: parseInt(document.getElementById('numColors').value) || 0,
-    layer1Id: document.getElementById('layer1').value || null,
-    layer2Id: document.getElementById('layer2').value || null,
-    layer3Id: document.getElementById('layer3').value || null,
-    layer4Id: document.getElementById('layer4').value || null,
+    layer1Id: getActualLayerId(1),
+    layer2Id: getActualLayerId(2),
+    layer3Id: getActualLayerId(3),
+    layer4Id: getActualLayerId(4),
     spreadWidth: parseFloat(document.getElementById('spreadWidth').value) || 0,
     cutStep: parseFloat(document.getElementById('cutStep').value) || 0,
     metallicSurcharge: (document.getElementById('hasNhu').checked ? CONSTANTS.nhuPrice : 0)
@@ -422,8 +478,8 @@ function gatherInput() {
     coverageRatio: (parseFloat(document.getElementById('coverage').value) || 100) / 100,
     handleWeight: parseFloat(document.getElementById('handleWeight').value) || 0,
     hasZipper: document.getElementById('hasZipper').checked,
-    paymentDays: parseInt(document.querySelector('#paymentTermGroup .option-btn.active')?.dataset.value) || 30,
-    paymentInterestRate: parseFloat(document.querySelector('#paymentTermGroup .option-btn.active')?.dataset.rate) || 0.0025,
+    paymentDays: parseInt(selectedPaymentTerm),
+    paymentInterestRate: paymentInterestRate,
     profitColumn: 2,
     commissionRate: document.getElementById('commissionUnit').value === 'percent'
       ? (parseFloat(document.getElementById('commission').value) || 0) / 100 : 0,
@@ -1225,9 +1281,12 @@ function loadFromHistory(id) {
   document.getElementById('hasZipper').checked = inp.hasZipper || false;
   // Restore payment term
   const savedDays = String(inp.paymentDays || 30);
-  document.querySelectorAll('#paymentTermGroup .option-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.value === savedDays);
-  });
+  const paymentRadio = document.querySelector(`input[name="paymentTerm"][value="${savedDays}"]`);
+  if (paymentRadio) paymentRadio.checked = true;
+  const paymentRateInput = document.getElementById('pt_rate_' + savedDays);
+  if (paymentRateInput && inp.paymentInterestRate !== undefined) {
+     paymentRateInput.value = inp.paymentInterestRate * 100;
+  }
   document.getElementById('cylLength').value = inp.cylLength || 0.63;
   document.getElementById('cylCircum').value = inp.cylCircum || 0.4;
   setFmtValue('cylUnitPrice', inp.cylUnitPrice || 7300000);
@@ -1287,8 +1346,11 @@ function resetForm() {
   document.getElementById('handleWeight').value = '';
   document.getElementById('hasZipper').checked = false;
   // Reset payment term to 30 days
-  document.querySelectorAll('#paymentTermGroup .option-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('#paymentTermGroup .option-btn[data-value="30"]').classList.add('active');
+  const defaultRadio = document.querySelector('input[name="paymentTerm"][value="30"]');
+  if (defaultRadio) defaultRadio.checked = true;
+  document.getElementById('pt_rate_14').value = "0.1";
+  document.getElementById('pt_rate_30').value = "0.25";
+  document.getElementById('pt_rate_90').value = "0.75";
   document.getElementById('cylLength').value = '';
   document.getElementById('cylCircum').value = '';
   setFmtValue('cylUnitPrice', CONSTANTS.cylinderPricePerUnit);

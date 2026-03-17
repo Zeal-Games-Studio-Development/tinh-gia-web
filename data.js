@@ -2,17 +2,23 @@
 // DATABASE NGUYÊN LIỆU - Lấy từ Data2023 sheet
 // ============================================================
 const MATERIALS = [
-  { id: 'PET', name: 'PET', density: 1.4, thickness: 12, pricePerKg: 34091, isPETorPA: true, rollLength: 6000, inkPricePerColor: 135 },
-  { id: 'PA', name: 'PA', density: 1.16, thickness: 15, pricePerKg: 70000, isPETorPA: true, rollLength: 6000, inkPricePerColor: 135 },
-  { id: 'LLDPE', name: 'LLDPE', density: 0.925, thickness: 120, pricePerKg: 40000, isPETorPA: false, adjustableMic: true, rollLength: 6000, inkPricePerColor: 120 },
+  { id: 'PET', name: 'PET', density: 1.4, thickness: 12, pricePerKg: 37037, isPETorPA: true, rollLength: 6000, inkPricePerColor: 140 },
+  { id: 'PA', name: 'PA', density: 1.16, thickness: 15, pricePerKg: 83333, isPETorPA: true, rollLength: 6000, inkPricePerColor: 140 },
+  { id: 'LLDPE', name: 'LLDPE', density: 0.925, thickness: 105, pricePerKg: 60000, isPETorPA: false, adjustableMic: true, rollLength: 6000, inkPricePerColor: 140 },
   { id: 'LLDPE Sua', name: 'LLDPE sữa', density: 0.990, thickness: 65, pricePerKg: 39000, isPETorPA: false, rollLength: 6000, inkPricePerColor: 140 },
-  { id: 'BOPP18', name: 'BOPP', density: 0.91, thickness: 18, pricePerKg: 41364, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
-  { id: 'BOPP20', name: 'BOPP', density: 0.91, thickness: 20, pricePerKg: 41364, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
-  { id: 'BOPP30', name: 'BOPP', density: 0.91, thickness: 30, pricePerKg: 40000, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
-  { id: 'MattBOPP20', name: 'Matt BOPP', density: 0.88, thickness: 20, pricePerKg: 50000, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
-  { id: 'CPP25', name: 'CPP', density: 0.92, thickness: 25, pricePerKg: 38426, isPETorPA: false, rollLength: 6000, inkPricePerColor: 120 },
-  { id: 'CPP40', name: 'CPP', density: 0.92, thickness: 40, pricePerKg: 39352, isPETorPA: false, rollLength: 6000, inkPricePerColor: 120 },
-  { id: 'BOPP40', name: 'BOPP', density: 0.91, thickness: 40, pricePerKg: 34725, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
+  { id: 'BOPP18', group: 'BOPP', name: 'BOPP', density: 0.91, thickness: 18, pricePerKg: 46296, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
+  { id: 'BOPP20', group: 'BOPP', name: 'BOPP', density: 0.91, thickness: 20, pricePerKg: 46296, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
+  { id: 'BOPP30', group: 'BOPP', name: 'BOPP', density: 0.91, thickness: 30, pricePerKg: 43519, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
+  { id: 'BOPP40', group: 'BOPP', name: 'BOPP', density: 0.91, thickness: 40, pricePerKg: 34722, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
+  { id: 'MattBOPP18', group: 'Matt BOPP', name: 'Matt BOPP', density: 0.88, thickness: 18, pricePerKg: 42593, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
+  { id: 'MattBOPP20', group: 'Matt BOPP', name: 'Matt BOPP', density: 0.88, thickness: 20, pricePerKg: 50926, isPETorPA: false, rollLength: 4000, inkPricePerColor: 120 },
+  { id: 'CPP20', group: 'CPP', name: 'CPP', density: 0.92, thickness: 20, pricePerKg: 38426, isPETorPA: false, rollLength: 6000, inkPricePerColor: 120 },
+  { id: 'CPP25', group: 'CPP', name: 'CPP', density: 0.92, thickness: 25, pricePerKg: 38426, isPETorPA: false, rollLength: 6000, inkPricePerColor: 120 },
+  { id: 'CPP30', group: 'CPP', name: 'CPP', density: 0.92, thickness: 30, pricePerKg: 38426, isPETorPA: false, rollLength: 6000, inkPricePerColor: 120 },
+  { id: 'CPP40', group: 'CPP', name: 'CPP', density: 0.92, thickness: 40, pricePerKg: 39352, isPETorPA: false, rollLength: 6000, inkPricePerColor: 120 },
+  { id: 'CPP50', group: 'CPP', name: 'CPP', density: 0.92, thickness: 50, pricePerKg: 41667, isPETorPA: false, rollLength: 6000, inkPricePerColor: 0 },
+  { id: 'MCPP25', group: 'MCPP', name: 'MCPP', density: 0.91, thickness: 25, pricePerKg: 55556, isPETorPA: false, rollLength: 6000, inkPricePerColor: 0 },
+  { id: 'MCPP50', group: 'MCPP', name: 'MCPP', density: 0.91, thickness: 50, pricePerKg: 55556, isPETorPA: false, rollLength: 6000, inkPricePerColor: 0 },
 ];
 
 // Tính giá VNĐ/m² = pricePerKg × thickness × density / 1000
@@ -65,7 +71,7 @@ const CONSTANTS = {
   cutMult3: 0.8,               // Hệ số cắt diện tích >= threshold2
   nhuPrice: 200,               // Phụ phí nhũ (đ)
   moPrice: 200,                // Phụ phí phủ mờ (đ)
-  
+
   // Thông số tính phi hao in
   colorSetup: { 1: 400, 2: 500, 3: 800, 4: 1000, 5: 1200, 6: 1500, 7: 1700, 8: 1800 },
   printWasteA: 6000,           // Mẫu số khi tính định mức CD màng cơ bản
