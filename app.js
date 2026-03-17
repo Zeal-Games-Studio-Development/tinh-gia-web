@@ -510,6 +510,12 @@ function doCalculate(silent = false) {
     return;
   }
   const input = gatherInput();
+  
+  if (input.cylUnitPrice > 0 && input.cylUnitPrice !== CONSTANTS.cylinderPricePerUnit) {
+    CONSTANTS.cylinderPricePerUnit = input.cylUnitPrice;
+    saveMaterialConfig();
+  }
+
   currentResult = calculate(input);
   if (!currentResult) {
     if (!silent) showToast('Vui lòng chọn đầy đủ lớp màng.', 'error');
@@ -586,6 +592,11 @@ function renderSaleView(r) {
 
     ['Độ dày', r.totalThickness + ' mic'],
   ].map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('');
+
+  const hintEl = document.getElementById('profitRateHint');
+  if (hintEl) {
+    hintEl.textContent = `(Ước tính: ${fmtPercent(r.defaultProfitRate)})`;
+  }
 
   analyzeChotGia();
   updateCommissionHint();
@@ -676,7 +687,7 @@ function renderManagerView(r) {
 
   document.getElementById('m-profit').innerHTML = [
     ['Tổng giá vốn SX', fmtVND(total)],
-    ['Tỷ lệ LN (' + (r.input.profitColumn === 1 ? 'Túi thường' : 'Túi phức tạp') + ')', fmtPercent(r.profitRate)],
+    [(r.input.customProfitRate >= 0 ? 'Tỷ lệ LN (Tùy chỉnh)' : 'Tỷ lệ LN (Ước tính)'), fmtPercent(r.profitRate)],
     ['Số tiền LN', fmtVND(r.profitAmount)],
     ['Doanh thu (GV + LN)', fmtVND(r.revenue)],
     ['Giá vốn+LN / túi', fmtVND(r.costPerUnit)],
@@ -1736,7 +1747,6 @@ function populateCPSXInputs() {
   document.getElementById('cfgGhepCPSX').value = dotFmt(CONSTANTS.ghepCPSX);
   document.getElementById('cfgLaborCost').value = dotFmt(CONSTANTS.laborCost);
   document.getElementById('cfgCutBase').value = dotFmt(CONSTANTS.cutBase || 971);
-  document.getElementById('cfgCylinderPrice').value = dotFmt(CONSTANTS.cylinderPricePerUnit);
   document.getElementById('cfgNhuPrice').value = dotFmt(CONSTANTS.nhuPrice);
   document.getElementById('cfgMoPrice').value = dotFmt(CONSTANTS.moPrice);
   // Cutting params
@@ -1763,7 +1773,6 @@ function updateCPSXConstants() {
   CONSTANTS.ghepCPSX = parseDotFmt(document.getElementById('cfgGhepCPSX').value) || 684;
   CONSTANTS.laborCost = parseDotFmt(document.getElementById('cfgLaborCost').value) || 318;
   CONSTANTS.cutBase = parseDotFmt(document.getElementById('cfgCutBase').value) || 971;
-  CONSTANTS.cylinderPricePerUnit = parseDotFmt(document.getElementById('cfgCylinderPrice').value) || 7300000;
   CONSTANTS.nhuPrice = parseDotFmt(document.getElementById('cfgNhuPrice').value) || 200;
   CONSTANTS.moPrice = parseDotFmt(document.getElementById('cfgMoPrice').value) || 200;
   // Cutting params

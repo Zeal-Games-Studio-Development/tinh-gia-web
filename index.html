@@ -406,7 +406,7 @@
 
             <!-- SECTION: Bảng Báo Giá -->
             <div id="sect-quote" class="manager-section-anchor"></div>
-            <div class="card" style="margin-top:14px; margin-bottom: 20px;">
+            <div class="card" style="margin-top:14px; margin-bottom: 20px; display: none;">
               <div class="card-title"><span class="icon">📋</span> Bảng báo giá</div>
               <div style="display: flex; align-items: center; justify-content: center; gap: 12px; border-bottom: 4px double #9e9e9e; padding-bottom: 16px; margin-bottom: 24px;">
                 <!-- Logo -->
@@ -541,7 +541,7 @@
             <a href="#sect-cost" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">2. Cơ Cấu Chi Phí</a>
             <a href="#sect-tech" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">3. Thông Số Kỹ Thuật</a>
             <a href="#sect-moq" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">4. Bảng MOQ</a>
-            <a href="#sect-quote" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">5. Bảng Báo Giá</a>
+            <a href="#sect-quote" class="toc-link" style="display:none; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">5. Bảng Báo Giá</a>
           </div>
 
         </div> <!-- End manager-layout -->
@@ -604,9 +604,9 @@
     <div class="manager-toc" style="width: 200px; position: fixed; right: 20px; top: 80px; background: var(--surface); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 90;">
       <div style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">Mục lục</div>
       <a href="#sect-config-nvl" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">📦 Bảng Giá NVL</a>
-      <a href="#sect-config-in" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">🖨️ Khâu In</a>
-      <a href="#sect-config-ghep" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">🔗 Khâu Ghép</a>
-      <a href="#sect-config-cat" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">✂️ Khâu Cắt</a>
+      <a href="#sect-config-in" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">🖨️ CPSX Khâu in</a>
+      <a href="#sect-config-ghep" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">🔗 CPSX Khâu Ghép</a>
+      <a href="#sect-config-cat" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">✂️ CPSX Khâu cắt</a>
       <a href="#sect-config-loinhuan" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">💰 Lợi Nhuận</a>
     </div>
 
@@ -639,7 +639,7 @@
     </div>
 
     <!-- ═══════════ NHÓM 1: CHI PHÍ KHÂU IN ═══════════ -->
-    <div class="config-group-header" id="sect-config-in" style="scroll-margin-top: 80px;">🖨️ Chi Phí Khâu In</div>
+    <div class="config-group-header" id="sect-config-in" style="scroll-margin-top: 80px;">🖨️ CPSX Khâu in</div>
 
     <!-- 1.2 Bảng giá màu in -->
     <div class="card config-card">
@@ -732,7 +732,7 @@
     </div>
 
     <!-- ═══════════ NHÓM 2: CHI PHÍ KHÂU GHÉP ═══════════ -->
-    <div class="config-group-header" id="sect-config-ghep" style="scroll-margin-top: 80px;">🔗 Chi Phí Khâu Ghép</div>
+    <div class="config-group-header" id="sect-config-ghep" style="scroll-margin-top: 80px;">🔗 CPSX Khâu Ghép</div>
 
     <div class="card config-card">
       <div class="config-section-title">
@@ -748,7 +748,7 @@
     </div>
 
     <!-- ═══════════ NHÓM 3: CHI PHÍ KHÂU CẮT ═══════════ -->
-    <div class="config-group-header" id="sect-config-cat" style="scroll-margin-top: 80px;">✂️ Chi Phí Khâu Cắt</div>
+    <div class="config-group-header" id="sect-config-cat" style="scroll-margin-top: 80px;">✂️ CPSX Khâu cắt</div>
 
     <div class="card config-card">
       <div class="config-section-title">
@@ -758,10 +758,6 @@
         <div class="config-cpsx-item">
           <label>CPSX Cắt cơ bản (đ)</label>
           <input type="text" class="fmt-number" id="cfgCutBase" value="971" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
-        </div>
-        <div class="config-cpsx-item">
-          <label>Giá trục in (đ/đơn vị)</label>
-          <input type="text" class="fmt-number" id="cfgCylinderPrice" value="7.300.000" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
         </div>
       </div>
       <div class="config-table-wrap" style="margin-top:12px">
