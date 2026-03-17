@@ -220,10 +220,10 @@ function calculate(input) {
   const productionDays = Math.ceil(quantity / 30000) + 4;
 
   // ── 13. CẤU TRÚC TEXT ──
-  let structureText = layer1.name.split(' ')[0] + ' ' + layer1.thickness;
-  if (layer2) structureText += '//' + layer2.name.split(' ')[0] + ' ' + layer2.thickness;
-  if (layer3) structureText += '//' + layer3.name.split(' ')[0] + ' ' + layer3.thickness;
-  if (layer4) structureText += '//' + layer4.name.split(' ')[0] + ' ' + layer4.thickness;
+  let structureText = layer1.name + ' ' + layer1.thickness;
+  if (layer2) structureText += '//' + layer2.name + ' ' + layer2.thickness;
+  if (layer3) structureText += '//' + layer3.name + ' ' + layer3.thickness;
+  if (layer4) structureText += '//' + layer4.name + ' ' + layer4.thickness;
 
   return {
     // Đầu vào

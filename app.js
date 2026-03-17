@@ -240,7 +240,7 @@ function validateOrderInfo() {
 // ══════════════════════════════════════════════
 function populateDropdowns() {
   const layerSelects = [1, 2, 3, 4].map(i => document.getElementById('layer' + i));
-  const layer1OnlyGroups = ['BOPP', 'Matt BOPP'];
+  const layer1OnlyGroups = ['BOPP', 'Matt OPP'];
 
   const groups = {};
   const flatOptions = [];
@@ -586,7 +586,7 @@ function renderSaleView(r) {
     ['Sản phẩm', r.input.productName],
     ['Cấu trúc', r.structureText],
     ['Số lượng', fmt(r.input.quantity) + ' túi'],
-    ['Kích thước túi', `${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`],
+    ['Khổ trải x Bước cắt', `${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`],
     ['Diện tích túi', fmtM2(r.bagArea)],
     ['Trọng lượng', fmt(r.tareWeight, 2) + ' gr/cái'],
 
@@ -840,7 +840,7 @@ function renderTechView(r) {
     ['Trọng lượng / túi (Tare)', fmt(r.tareWeight, 2) + ' gr'],
     ['Tổng trọng lượng', fmt(r.tareWeight * r.input.quantity / 1000, 1) + ' kg'],
     ['Trọng lượng (tấn)', fmt(r.tareWeight * r.input.quantity / 1000000, 3) + ' tấn'],
-    ['Kích thước túi', `${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`]
+    ['Khổ trải x Bước cắt', `${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`]
   ];
 
   const mWeightItems = [...tWeightItems, ['Giá trục in (bộ)', fmtVND(r.cylinderCost)]];
@@ -1551,25 +1551,41 @@ function updateMaterialPrice(input) {
 function renderInkPriceTable() {
   const tbody = document.getElementById('inkPriceBody');
   if (!tbody) return;
+
+  // Build unique-name rows (first occurrence per name wins for display)
+  const seen = new Set();
+  let rowNum = 0;
   tbody.innerHTML = MATERIALS.map((m, i) => {
-    const defaultM = MATERIALS_DEFAULTS[i];
-    const inkChanged = m.inkPricePerColor !== defaultM.inkPricePerColor ? ' changed' : '';
+    if (seen.has(m.name)) return ''; // skip duplicates
+    seen.add(m.name);
+    rowNum++;
+    // Check if ANY material with this name has a changed ink price
+    const inkChanged = MATERIALS.some((mat, j) =>
+      mat.name === m.name && mat.inkPricePerColor !== MATERIALS_DEFAULTS[j].inkPricePerColor
+    ) ? ' changed' : '';
     return `<tr>
-      <td>${i + 1}</td>
+      <td>${rowNum}</td>
       <td class="mat-name">${m.name}</td>
       <td><input class="cfg-input${inkChanged}" type="text" value="${dotFmt(m.inkPricePerColor)}"
-           data-idx="${i}" oninput="fmtCfgInput(this)" onchange="updateInkPrice(this)"></td>
+           data-name="${m.name}" oninput="fmtCfgInput(this)" onchange="updateInkPrice(this)"></td>
     </tr>`;
   }).join('');
 }
 
 function updateInkPrice(input) {
-  const idx = parseInt(input.dataset.idx);
+  const name = input.dataset.name;
   const val = parseDotFmt(input.value);
-  const m = MATERIALS[idx];
-  const defaultM = MATERIALS_DEFAULTS[idx];
-  m.inkPricePerColor = val;
-  input.classList.toggle('changed', val !== defaultM.inkPricePerColor);
+  // Apply to ALL materials sharing the same name
+  MATERIALS.forEach((m, i) => {
+    if (m.name === name) {
+      m.inkPricePerColor = val;
+    }
+  });
+  // Highlight if changed from any default in this group
+  const isChanged = MATERIALS.some((m, i) =>
+    m.name === name && m.inkPricePerColor !== MATERIALS_DEFAULTS[i].inkPricePerColor
+  );
+  input.classList.toggle('changed', isChanged);
   saveMaterialConfig();
 }
 
