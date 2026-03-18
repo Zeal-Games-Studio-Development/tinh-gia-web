@@ -459,31 +459,68 @@ function autoCalcCylinder() {
   const spreadWidth = parseFloat(document.getElementById('spreadWidth').value);
   const cutStep = parseFloat(document.getElementById('cutStep').value);
   
+  let n = parseInt(document.getElementById('numImages').value);
+  if (isNaN(n) || n <= 0) {
+    n = 1;
+  }
+  
   if (!isNaN(spreadWidth) && spreadWidth > 0) {
-    document.getElementById('cylLength').value = +(spreadWidth + 0.1).toFixed(3);
+    let baseWidth = spreadWidth * n;
+    if (baseWidth < 0.7) {
+      document.getElementById('cylLength').value = 0.7; // min là 700mm
+    } else {
+      document.getElementById('cylLength').value = +(baseWidth + 0.1).toFixed(3);
+    }
   } else {
     document.getElementById('cylLength').value = '';
   }
   
   if (!isNaN(cutStep) && cutStep > 0) {
-    let n = parseInt(document.getElementById('numImages').value);
-    
-    // Nếu người dùng không nhập (hoặc nhập sai), tự động tìm n
-    if (isNaN(n) || n <= 0) {
-      n = 1;
-      // Tìm n sao cho cutStep * n >= 0.4
-      while (cutStep * n < 0.4) {
-        n++;
-      }
-    }
-    
-    document.getElementById('cylCircum').value = +(cutStep * n).toFixed(3);
+    document.getElementById('cylCircum').value = +cutStep.toFixed(3);
   } else {
     document.getElementById('cylCircum').value = '';
   }
   
-  // Also force preview update for cylinders if they're visible
   updateCylinderPreview();
+  checkCylinderBounds(); // Gọi check notice
+}
+
+function checkCylinderBounds() {
+  const l = parseFloat(document.getElementById('cylLength').value);
+  const lNotice = document.getElementById('cylLengthNotice');
+  if (lNotice) {
+    if (!isNaN(l)) {
+      if (l < 0.7) {
+        lNotice.textContent = '⚠️ Dưới tối thiểu (0.7m)';
+        lNotice.style.display = 'block';
+      } else if (l > 1.25) {
+        lNotice.textContent = '⚠️ Vượt tối đa (1.25m)';
+        lNotice.style.display = 'block';
+      } else {
+        lNotice.style.display = 'none';
+      }
+    } else {
+      lNotice.style.display = 'none';
+    }
+  }
+
+  const c = parseFloat(document.getElementById('cylCircum').value);
+  const cNotice = document.getElementById('cylCircumNotice');
+  if (cNotice) {
+    if (!isNaN(c)) {
+      if (c < 0.4) {
+        cNotice.textContent = '⚠️ Dưới tối thiểu (0.4m)';
+        cNotice.style.display = 'block';
+      } else if (c > 0.9) {
+        cNotice.textContent = '⚠️ Vượt tối đa (0.9m)';
+        cNotice.style.display = 'block';
+      } else {
+        cNotice.style.display = 'none';
+      }
+    } else {
+      cNotice.style.display = 'none';
+    }
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -573,38 +610,52 @@ function gatherInput() {
   const selCutStep = parseFloat(document.getElementById('cutStep').value) || 0;
   let nImages = parseInt(document.getElementById('numImages').value);
   if (isNaN(nImages) || nImages <= 0) {
-    nImages = 1;
-    if (selCutStep > 0) {
-      while (selCutStep * nImages < 0.4) nImages++;
-    }
+    nImages = 1; // Mặc định là 1, bỏ tự động nhân theo bước cắt
   }
+
+  const layer1Id = getActualLayerId(1);
+  const layer2Id = getActualLayerId(2);
+  const layer3Id = getActualLayerId(3);
+  const layer4Id = getActualLayerId(4);
+  const layer5Id = getActualLayerId(5);
+  const bagType = document.getElementById('bagType').value || '';
+  const hasZipper = document.getElementById('hasZipper')?.checked || false;
+
+  const activeLayers = [layer1Id, layer2Id, layer3Id, layer4Id, layer5Id].filter(id => id && id.length > 0);
+  const numLayers = activeLayers.length;
+  const hasMPETorAL = activeLayers.some(id => {
+    const upper = id.toUpperCase();
+    return upper.includes('MPET') || upper.includes('AL');
+  });
+  
+  const computedProfitColumn = (numLayers >= 3 || hasMPETorAL || bagType === 'dayDung' || hasZipper) ? 2 : 1;
 
   return {
     customer: document.getElementById('customer').value || 'N/A',
     productName: document.getElementById('productName').value || 'N/A',
     productType: document.getElementById('productType').value || '',
-    bagType: document.getElementById('bagType').value || '',
+    bagType: bagType,
     filmType: document.getElementById('filmType').value || '',
     quantity: getFmtValue('quantity', 0),
     numColors: parseInt(document.getElementById('numColors').value) || 0,
     numImages: nImages,
-    layer1Id: getActualLayerId(1),
-    layer2Id: getActualLayerId(2),
-    layer3Id: getActualLayerId(3),
-    layer4Id: getActualLayerId(4),
-    layer5Id: getActualLayerId(5),
+    layer1Id: layer1Id,
+    layer2Id: layer2Id,
+    layer3Id: layer3Id,
+    layer4Id: layer4Id,
+    layer5Id: layer5Id,
     spreadWidth: parseFloat(document.getElementById('spreadWidth').value) || 0,
     cutStep: parseFloat(document.getElementById('cutStep').value) || 0,
     metallicSurcharge: (document.getElementById('hasNhu').checked ? CONSTANTS.nhuPrice : 0)
       + (document.getElementById('hasMo').checked ? CONSTANTS.moPrice : 0),
     coverageRatio: (parseFloat(document.getElementById('coverage').value) || 100) / 100,
     handleWeight: 0,
-    hasZipper: document.getElementById('hasZipper')?.checked || false,
+    hasZipper: hasZipper,
     hasTape: document.getElementById('hasTape')?.checked || false,
     hasHandle: document.getElementById('hasHandle')?.checked || false,
     paymentDays: parseInt(selectedPaymentTerm),
     paymentInterestRate: paymentInterestRate,
-    profitColumn: 2,
+    profitColumn: computedProfitColumn,
     commissionRate: document.getElementById('commissionUnit').value === 'percent'
       ? (parseFloat(document.getElementById('commission').value) || 0) / 100 : 0,
     commissionFixedVND: document.getElementById('commissionUnit').value === 'vnd'
@@ -1507,11 +1558,13 @@ function resetForm() {
   document.getElementById('layer5').value = '';
   document.getElementById('spreadWidth').value = '';
   document.getElementById('cutStep').value = '';
-  document.getElementById('hasNhu').checked = false;
-  document.getElementById('hasMo').checked = false;
-  document.getElementById('coverage').value = '';
-  document.getElementById('handleWeight').value = '';
-  document.getElementById('hasZipper').checked = false;
+  if (document.getElementById('hasNhu')) document.getElementById('hasNhu').checked = false;
+  if (document.getElementById('hasMo')) document.getElementById('hasMo').checked = false;
+  if (document.getElementById('coverage')) document.getElementById('coverage').value = '';
+  if (document.getElementById('handleWeight')) document.getElementById('handleWeight').value = '';
+  if (document.getElementById('hasHandle')) document.getElementById('hasHandle').checked = false;
+  if (document.getElementById('hasTape')) document.getElementById('hasTape').checked = false;
+  if (document.getElementById('hasZipper')) document.getElementById('hasZipper').checked = false;
   // Reset payment term to 30 days
   const defaultRadio = document.querySelector('input[name="paymentTerm"][value="30"]');
   if (defaultRadio) defaultRadio.checked = true;
@@ -1520,7 +1573,7 @@ function resetForm() {
   document.getElementById('pt_rate_90').value = "0.75";
   document.getElementById('cylLength').value = '';
   document.getElementById('cylCircum').value = '';
-  setFmtValue('cylUnitPrice', CONSTANTS.cylinderPricePerUnit);
+  setFmtValue('cylUnitPrice', CONSTANTS.cylinderPricePerUnit || 7300000);
   document.getElementById('commission').value = '';
   document.getElementById('commissionUnit').value = 'percent';
   document.getElementById('commissionHint').textContent = '';
@@ -2020,7 +2073,7 @@ function loadMaterialConfig() {
       if (data.cpsx.cutMult1 != null) CONSTANTS.cutMult1 = data.cpsx.cutMult1;
       if (data.cpsx.cutMult2 != null) CONSTANTS.cutMult2 = data.cpsx.cutMult2;
       if (data.cpsx.cutMult3 != null) CONSTANTS.cutMult3 = data.cpsx.cutMult3;
-      CONSTANTS.cylinderPricePerUnit = data.cpsx.cylinderPricePerUnit;
+      if (data.cpsx.cylinderPricePerUnit) CONSTANTS.cylinderPricePerUnit = data.cpsx.cylinderPricePerUnit;
       if (data.cpsx.nhuPrice != null) CONSTANTS.nhuPrice = data.cpsx.nhuPrice;
       if (data.cpsx.moPrice != null) CONSTANTS.moPrice = data.cpsx.moPrice;
       if (data.cpsx.zipperPrice != null) {
