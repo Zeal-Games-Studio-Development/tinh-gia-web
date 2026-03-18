@@ -106,7 +106,7 @@
       <div id="structureSection" style="display:none">
         <div class="card-title" style="font-size:0.78rem"><span class="icon">🏗️</span> Cấu trúc</div>
 
-        <div class="form-row">
+        <div class="form-row-3">
           <div class="form-group">
             <label class="form-label">Khổ trải (m)</label>
             <input class="form-input calc-trigger" id="spreadWidth" type="number" value="" step="0.01" min="0.05" oninput="autoCalcCylinder()">
@@ -114,6 +114,10 @@
           <div class="form-group">
             <label class="form-label">Bước cắt (m)</label>
             <input class="form-input calc-trigger" id="cutStep" type="number" value="" step="0.001" min="0.05" oninput="autoCalcCylinder()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Số con hình</label>
+            <input class="form-input calc-trigger" id="numImages" type="number" value="" step="1" min="1" placeholder="Tự động" oninput="autoCalcCylinder()">
           </div>
         </div>
 
@@ -182,10 +186,6 @@
             <label class="form-label">Phủ mực (%)</label>
             <input type="number" class="form-input calc-trigger" id="coverage" value="" min="0" max="100" step="1" placeholder="100">
           </div>
-          <div class="form-group">
-            <label class="form-label">Quai (gr)</label>
-            <input class="form-input calc-trigger" id="handleWeight" type="number" value="" min="0" max="10" step="0.1">
-          </div>
         </div>
 
         <div class="form-row-3" style="margin-top: 10px;">
@@ -201,10 +201,23 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-check">
-            <input type="checkbox" id="hasZipper" class="calc-trigger"> Có Zipper (378đ/m)
-          </label>
+        <div class="advanced-sub-title">🎀 Phụ kiện</div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-check">
+              <input type="checkbox" id="hasZipper" class="calc-trigger"> Zipper (378đ/m)
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-check">
+              <input type="checkbox" id="hasTape" class="calc-trigger"> Băng keo
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-check">
+              <input type="checkbox" id="hasHandle" class="calc-trigger"> Quai
+            </label>
+          </div>
         </div>
 
         <div class="advanced-sub-title">🖨️ Trục in</div>
@@ -832,6 +845,30 @@
         </table>
       </div>
       <p class="config-note">💡 Tỉ lệ lợi nhuận tự động tính từ giá vốn. Các con số này có thể chỉnh sửa và tự động lưu.</p>
+    </div>
+
+    <!-- ═══════════ NHÓM 5: GIÁ PHỤ KIỆN ═══════════ -->
+    <div class="config-group-header" id="sect-config-phukien" style="scroll-margin-top: 80px;">🎀 Giá Phụ Kiện</div>
+
+    <div class="card config-card">
+      <div class="config-section-title">
+        <span>💰 Cài Đặt Đơn Giá Phụ Kiện</span>
+      </div>
+      <div class="config-cpsx-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+        <div class="config-cpsx-item">
+          <label>Zipper (đ/m)</label>
+          <input type="text" class="fmt-number" id="cfgZipperPrice" value="378" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+        <div class="config-cpsx-item">
+          <label>Băng keo (đ/m)</label>
+          <input type="text" class="fmt-number" id="cfgTapePrice" value="200" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+        <div class="config-cpsx-item">
+          <label>Quai (đ/cái)</label>
+          <input type="text" class="fmt-number" id="cfgHandlePrice" value="650" oninput="fmtCfgInput(this)" onchange="updateCPSXConstants()">
+        </div>
+      </div>
+      <p class="config-note">💡 Đơn giá thay đổi tùy thời điểm, tự động áp dụng khi chốt giá cho đơn hàng.</p>
     </div>
 
     </div>

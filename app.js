@@ -127,6 +127,73 @@ function toggleAdvanced() {
   localStorage.setItem('lts_advanced_open', isOpen ? '1' : '0');
 }
 
+// ══════════════════════════════════════════════
+// COLLAPSIBLE RESULT CARDS
+// ══════════════════════════════════════════════
+/**
+ * Gắn mũi tên thu/mở vào mọi .card trong #resultArea.
+ * Gọi sau khi render kết quả xong.
+ * Lưu trạng thái (open/collapsed) vào localStorage theo card-id (data-card-id).
+ */
+function initCollapsibleCards() {
+  const resultArea = document.getElementById('resultArea');
+  if (!resultArea) return;
+
+  resultArea.querySelectorAll('.card').forEach((card, idx) => {
+    const titleEl = card.querySelector(':scope > .card-title');
+    if (!titleEl) return;
+
+    // Assign stable ID dựa vào text của title
+    const cardKey = 'lts_card_' + (titleEl.textContent.trim().substring(0, 30).replace(/\s+/g, '_').replace(/[^\w]/g, '') || idx);
+    card.dataset.collapseKey = cardKey;
+
+    // Nếu đã xử lý rồi (re-render), chỉ cập nhật trạng thái
+    if (titleEl.classList.contains('collapsible')) {
+      const body = card.querySelector(':scope > .card-body-collapsible');
+      const arrow = titleEl.querySelector('.card-collapse-arrow');
+      const isCollapsed = localStorage.getItem(cardKey) === '0';
+      if (body) body.classList.toggle('open', !isCollapsed);
+      if (arrow) arrow.classList.toggle('open', !isCollapsed);
+      return;
+    }
+
+    // Thêm class collapsible vào title
+    titleEl.classList.add('collapsible');
+
+    // Tạo mũi tên (SVG tam giác đều có trọng tâm tại giữa viewBox để xoay không bị lệch)
+    const arrow = document.createElement('span');
+    arrow.className = 'card-collapse-arrow';
+    arrow.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5.072,8 18.928,8 12,20"/></svg>';
+    titleEl.appendChild(arrow);
+
+    // Bọc tất cả nội dung sau title vào wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-body-collapsible';
+
+    // Lấy tất cả sibling nodes sau title-el và đưa vào wrapper
+    const siblings = [];
+    let next = titleEl.nextSibling;
+    while (next) {
+      siblings.push(next);
+      next = next.nextSibling;
+    }
+    siblings.forEach(s => wrapper.appendChild(s));
+    card.appendChild(wrapper);
+
+    // Restore trạng thái từ localStorage (mặc định: mở)
+    const isCollapsed = localStorage.getItem(cardKey) === '0';
+    wrapper.classList.toggle('open', !isCollapsed);
+    arrow.classList.toggle('open', !isCollapsed);
+
+    // Gắn sự kiện click
+    titleEl.addEventListener('click', () => {
+      const isNowOpen = wrapper.classList.toggle('open');
+      arrow.classList.toggle('open', isNowOpen);
+      localStorage.setItem(cardKey, isNowOpen ? '1' : '0');
+    });
+  });
+}
+
 function loadDisplayPreferences() {
   const theme = localStorage.getItem('lts_theme') || 'light';
   const layout = localStorage.getItem('lts_layout') || 'default';
@@ -363,11 +430,17 @@ function autoCalcCylinder() {
   }
   
   if (!isNaN(cutStep) && cutStep > 0) {
-    let n = 1;
-    // Tìm n sao cho cutStep * n >= 0.4
-    while (cutStep * n < 0.4) {
-      n++;
+    let n = parseInt(document.getElementById('numImages').value);
+    
+    // Nếu người dùng không nhập (hoặc nhập sai), tự động tìm n
+    if (isNaN(n) || n <= 0) {
+      n = 1;
+      // Tìm n sao cho cutStep * n >= 0.4
+      while (cutStep * n < 0.4) {
+        n++;
+      }
     }
+    
     document.getElementById('cylCircum').value = +(cutStep * n).toFixed(3);
   } else {
     document.getElementById('cylCircum').value = '';
@@ -461,6 +534,15 @@ function gatherInput() {
   const paymentRateInput = document.getElementById('pt_rate_' + selectedPaymentTerm);
   const paymentInterestRate = paymentRateInput ? parseFloat(paymentRateInput.value) / 100 : 0.0025;
 
+  const selCutStep = parseFloat(document.getElementById('cutStep').value) || 0;
+  let nImages = parseInt(document.getElementById('numImages').value);
+  if (isNaN(nImages) || nImages <= 0) {
+    nImages = 1;
+    if (selCutStep > 0) {
+      while (selCutStep * nImages < 0.4) nImages++;
+    }
+  }
+
   return {
     customer: document.getElementById('customer').value || 'N/A',
     productName: document.getElementById('productName').value || 'N/A',
@@ -469,6 +551,7 @@ function gatherInput() {
     filmType: document.getElementById('filmType').value || '',
     quantity: getFmtValue('quantity', 0),
     numColors: parseInt(document.getElementById('numColors').value) || 0,
+    numImages: nImages,
     layer1Id: getActualLayerId(1),
     layer2Id: getActualLayerId(2),
     layer3Id: getActualLayerId(3),
@@ -478,8 +561,10 @@ function gatherInput() {
     metallicSurcharge: (document.getElementById('hasNhu').checked ? CONSTANTS.nhuPrice : 0)
       + (document.getElementById('hasMo').checked ? CONSTANTS.moPrice : 0),
     coverageRatio: (parseFloat(document.getElementById('coverage').value) || 100) / 100,
-    handleWeight: parseFloat(document.getElementById('handleWeight').value) || 0,
-    hasZipper: document.getElementById('hasZipper').checked,
+    handleWeight: 0,
+    hasZipper: document.getElementById('hasZipper')?.checked || false,
+    hasTape: document.getElementById('hasTape')?.checked || false,
+    hasHandle: document.getElementById('hasHandle')?.checked || false,
     paymentDays: parseInt(selectedPaymentTerm),
     paymentInterestRate: paymentInterestRate,
     profitColumn: 2,
@@ -529,6 +614,9 @@ function doCalculate(silent = false) {
   renderMOQView(currentResult); // always render MOQ now since it is part of Manager view
   renderQuoteView(currentResult);
 
+  // Gắn mũi tên thu/mở cho các card trong vùng kết quả
+  setTimeout(() => initCollapsibleCards(), 0);
+
   const activeTab = document.querySelector('.tab.active');
   const view = activeTab ? activeTab.dataset.view : 'manager';
   const layout = document.documentElement.getAttribute('data-layout');
@@ -560,7 +648,36 @@ function doCalculate(silent = false) {
 // ══════════════════════════════════════════════
 function renderSaleView(r) {
   document.getElementById('s-price').textContent = fmt(r.finalPrice, 0);
-  document.getElementById('s-structure').textContent = `${r.input.customer} — ${r.input.productName} | ${r.structureText} | SL: ${fmt(r.input.quantity)}`;
+  const numColorsText = r.input.numColors > 0 ? `${r.input.numColors} màu` : 'Không in';
+  const spreadMm = +(r.input.spreadWidth * 1000).toFixed(0);
+  const cutMm = +(r.input.cutStep * 1000).toFixed(0);
+  
+  const bagMap = {
+    '3bien': '3 biên', '4bien': '4 biên', 'xephong_lech': 'Xếp hông dán lưng lệch',
+    'xephong_giua': 'Xếp hông dán lưng giữa', 'dayDung': 'Đáy đứng', 'cutSeal': 'Cut seal'
+  };
+  let bagStr = bagMap[r.input.bagType] || '';
+  if (r.input.productType === 'tui' && bagStr) {
+    if (r.input.hasZipper) {
+      if (r.input.bagType === 'cutSeal') {
+        bagStr = 'Cute seal nắp băng keo';
+      } else {
+        bagStr = 'Zipper ' + bagStr;
+      }
+    }
+  } else if (r.input.productType === 'mang') {
+    bagStr = 'Màng cuộn';
+  }
+
+  document.getElementById('s-structure').innerHTML = `
+    <div style="font-weight:600; color:var(--text); font-size:1.05rem; margin-bottom:12px;">${r.input.customer} — ${r.input.productName}</div>
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px 20px; font-size:0.9rem; margin:0 auto; max-width:600px;">
+      <div><strong>Chất liệu:</strong> ${r.structureText}</div>
+      <div><strong>Số màu:</strong> ${numColorsText}</div>
+      <div><strong>Kích thước:</strong> KT ${spreadMm} mm x BC ${cutMm} mm</div>
+      <div><strong>Loại ${r.input.productType === 'mang' ? 'sản phẩm' : 'túi'}:</strong> ${bagStr}</div>
+    </div>
+  `;
 
   document.getElementById('s-stats').innerHTML = `
     <div class="stat-card accent"><div class="stat-label">Giá vốn+LN/túi</div><div class="stat-value">${fmt(r.costPerUnit, 1)}</div></div>
@@ -716,7 +833,7 @@ function renderTechView(r) {
     <div class="stat-card accent"><div class="stat-label">Đầu Vào Khâu In</div><div class="stat-value">${fmt(r.printMeters + r.printWaste, 0)} m</div></div>
     <div class="stat-card cyan"><div class="stat-label">Đầu Vào Khâu Cắt</div><div class="stat-value">${fmt(r.cutMeters + r.cutWaste, 0)} m</div></div>
     <div class="stat-card green"><div class="stat-label">Khổ Thành Phẩm</div><div class="stat-value">${fmt(r.printWidth * 100, 1)} cm</div></div>
-    <div class="stat-card orange"><div class="stat-label">Khổ Màng NL</div><div class="stat-value">${fmt(r.printNLWidth * 100, 1)} cm</div></div>
+    <div class="stat-card orange"><div class="stat-label">Khổ Màng NL</div><div class="stat-value">${fmt((r.input.spreadWidth * r.input.numImages + 0.02) * 100, 1)} cm</div></div>
   `;
   document.getElementById('t-stats').innerHTML = tStatsHTML;
   document.getElementById('m-t-stats').innerHTML = tStatsHTML;
@@ -798,25 +915,35 @@ function renderTechView(r) {
     <th class="num">CP vật liệu (đ/m²)</th><th class="num">Thành tiền CPVL</th>
   </tr>`;
 
-  const uniBodyTech = uniRows.map(row => `<tr>
-    <td>${row.stage}</td><td>${row.mat}</td>
-    <td class="num">${fmt(row.width, 2)}</td>
-    <td class="num">${fmt(row.meters, 0)}</td>
-    <td class="num">${fmt(row.waste, 0)}</td>
-    <td class="num highlight">${fmt(row.input, 0)}</td>
-  </tr>`).join('');
+  const uniBodyTech = uniRows.map(row => {
+    let dWidth = row.width;
+    if (row.stage !== 'CẮT') dWidth = r.input.spreadWidth * r.input.numImages + 0.02;
+    let dMeters = row.meters / r.input.numImages;
+    return `<tr>
+      <td>${row.stage}</td><td>${row.mat}</td>
+      <td class="num">${fmt(dWidth, 3)}</td>
+      <td class="num">${fmt(dMeters, 0)}</td>
+      <td class="num">${fmt(row.waste, 0)}</td>
+      <td class="num highlight">${fmt(row.input, 0)}</td>
+    </tr>`;
+  }).join('');
 
-  const uniBodyManager = uniRows.map(row => `<tr>
-    <td>${row.stage}</td><td>${row.mat}</td>
-    <td class="num">${fmt(row.width, 2)}</td>
-    <td class="num">${fmt(row.meters, 0)}</td>
-    <td class="num">${fmt(row.waste, 0)}</td>
-    <td class="num highlight">${fmt(row.input, 0)}</td>
-    <td class="num">${fmt(row.cpsx, 0)}</td>
-    <td class="num">${fmt(row.costCPSX, 0)}</td>
-    <td class="num">${row.matPrice != null ? fmt(row.matPrice, 1) : '—'}</td>
-    <td class="num">${row.costMat != null ? fmt(row.costMat, 0) : '—'}</td>
-  </tr>`).join('');
+  const uniBodyManager = uniRows.map(row => {
+    let dWidth = row.width;
+    if (row.stage !== 'CẮT') dWidth = r.input.spreadWidth * r.input.numImages + 0.02;
+    let dMeters = row.meters / r.input.numImages;
+    return `<tr>
+      <td>${row.stage}</td><td>${row.mat}</td>
+      <td class="num">${fmt(dWidth, 3)}</td>
+      <td class="num">${fmt(dMeters, 0)}</td>
+      <td class="num">${fmt(row.waste, 0)}</td>
+      <td class="num highlight">${fmt(row.input, 0)}</td>
+      <td class="num">${fmt(row.cpsx, 0)}</td>
+      <td class="num">${fmt(row.costCPSX, 0)}</td>
+      <td class="num">${row.matPrice != null ? fmt(row.matPrice, 1) : '—'}</td>
+      <td class="num">${row.costMat != null ? fmt(row.costMat, 0) : '—'}</td>
+    </tr>`;
+  }).join('');
 
   const grandTotal = totalCPSX + totalCPVL;
   const uniFooterManager = `
@@ -1797,6 +1924,11 @@ function updateCPSXConstants() {
   CONSTANTS.cutMult1 = parseFloat(document.getElementById('cfgCutMult1').value) || 1.4;
   CONSTANTS.cutMult2 = parseFloat(document.getElementById('cfgCutMult2').value) || 1.2;
   CONSTANTS.cutMult3 = parseFloat(document.getElementById('cfgCutMult3').value) || 0.8;
+  
+  // Phụ kiện
+  CONSTANTS.zipperPrice = parseDotFmt(document.getElementById('cfgZipperPrice')?.value) || 378;
+  CONSTANTS.tapePrice = parseDotFmt(document.getElementById('cfgTapePrice')?.value) || 200;
+  CONSTANTS.handlePrice = parseDotFmt(document.getElementById('cfgHandlePrice')?.value) || 650;
   updateCutPreviews();
   saveMaterialConfig();
   showToast('Đã cập nhật!', 'success');
@@ -1819,7 +1951,10 @@ function saveMaterialConfig() {
       cutMult3: CONSTANTS.cutMult3,
       cylinderPricePerUnit: CONSTANTS.cylinderPricePerUnit,
       nhuPrice: CONSTANTS.nhuPrice,
-      moPrice: CONSTANTS.moPrice
+      moPrice: CONSTANTS.moPrice,
+      zipperPrice: CONSTANTS.zipperPrice,
+      tapePrice: CONSTANTS.tapePrice,
+      handlePrice: CONSTANTS.handlePrice
     },
     printWaste: {
       colorSetup: CONSTANTS.colorSetup,
@@ -1861,6 +1996,18 @@ function loadMaterialConfig() {
       CONSTANTS.cylinderPricePerUnit = data.cpsx.cylinderPricePerUnit;
       if (data.cpsx.nhuPrice != null) CONSTANTS.nhuPrice = data.cpsx.nhuPrice;
       if (data.cpsx.moPrice != null) CONSTANTS.moPrice = data.cpsx.moPrice;
+      if (data.cpsx.zipperPrice != null) {
+        CONSTANTS.zipperPrice = data.cpsx.zipperPrice;
+        const eZip = document.getElementById('cfgZipperPrice'); if (eZip) eZip.value = fmt(CONSTANTS.zipperPrice);
+      }
+      if (data.cpsx.tapePrice != null) {
+        CONSTANTS.tapePrice = data.cpsx.tapePrice;
+        const eTape = document.getElementById('cfgTapePrice'); if (eTape) eTape.value = fmt(CONSTANTS.tapePrice);
+      }
+      if (data.cpsx.handlePrice != null) {
+        CONSTANTS.handlePrice = data.cpsx.handlePrice;
+        const eHand = document.getElementById('cfgHandlePrice'); if (eHand) eHand.value = fmt(CONSTANTS.handlePrice);
+      }
     }
     // Backward compatibility & new property loads
     if (data.printWaste) {

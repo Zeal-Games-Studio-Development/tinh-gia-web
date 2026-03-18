@@ -56,6 +56,8 @@ const PROFIT_DEFAULT = { col1: 0.04, col2: 0.11 };
 // ============================================================
 const CONSTANTS = {
   zipperPrice: 378,            // VNĐ/m (=360*1.05)
+  tapePrice: 200,              // VNĐ/m (Băng keo)
+  handlePrice: 650,            // VNĐ/cái (Quai)
   boxPriceDefault: 18000,      // VNĐ/thùng (mặc định)
   bagsPerBoxDefault: 1000,     // túi/thùng (mặc định)
   interestRate: 0.10,          // 10%/năm

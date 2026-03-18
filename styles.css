@@ -1282,3 +1282,56 @@ body {
   .chot-gia-row .btn { width: 100%; margin-top: 6px; }
   .config-card { padding: 16px 14px; }
 }
+
+/* ═══════════ COLLAPSIBLE RESULT CARDS ═══════════ */
+#resultArea .card-title.collapsible {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s, background 0.2s;
+  border-radius: 8px;
+  padding: 5px 8px;
+  margin: -5px -8px 11px;
+}
+#resultArea .card-title.collapsible:hover {
+  background: rgba(79,70,229,0.05);
+  color: var(--accent);
+}
+.card-collapse-arrow {
+  color: var(--dim);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), color 0.2s;
+  flex-shrink: 0;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  transform-origin: center;
+  line-height: 0;
+}
+#resultArea .card-title.collapsible:hover .card-collapse-arrow {
+  color: var(--accent);
+}
+.card-collapse-arrow.open {
+  transform: rotate(0deg);
+  color: var(--accent);
+}
+.card-collapse-arrow:not(.open) {
+  transform: rotate(180deg);
+}
+.card-body-collapsible {
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;
+}
+.card-body-collapsible.open {
+  max-height: 9999px;
+  opacity: 1;
+}
+.card-body-collapsible:not(.open) {
+  max-height: 0;
+  opacity: 0;
+}
+@media print {
+  .card-body-collapsible { max-height: none !important; opacity: 1 !important; }
+  .card-collapse-arrow { display: none !important; }
+}
