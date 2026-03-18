@@ -672,6 +672,20 @@ body {
 }
 .form-input:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
 .form-select option { background: var(--surface); color: var(--text); }
+.form-select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 4px,
+    rgba(127,127,127,0.07) 4px,
+    rgba(127,127,127,0.07) 8px
+  );
+  border-style: dashed;
+  border-color: var(--border);
+  color: var(--dim);
+}
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .form-check { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; }

@@ -7,7 +7,7 @@ function calculate(input) {
     quantity, spreadWidth, cutStep, numColors, metallicSurcharge = 0,
     handleWeight = 0, coverageRatio = 1, profitColumn = 2,
     commissionRate = 0, hasZipper = false,
-    layer1Id, layer2Id, layer3Id, layer4Id,
+    layer1Id, layer2Id, layer3Id, layer4Id, layer5Id,
     shippingPerKm, shippingKm,
     boxPrice, bagsPerBox,
     micOverrides = {}
@@ -28,11 +28,12 @@ function calculate(input) {
   const layer2 = layer2Id ? cloneMat(getMaterial(layer2Id), 'layer2') : null;
   const layer3 = layer3Id ? cloneMat(getMaterial(layer3Id), 'layer3') : null;
   const layer4 = layer4Id ? cloneMat(getMaterial(layer4Id), 'layer4') : null;
+  const layer5 = layer5Id ? cloneMat(getMaterial(layer5Id), 'layer5') : null;
   if (!layer1) return null; // At minimum, layer1 is required
 
   // Count active middle layers for waste calculation
-  const middleLayers = [layer2, layer3].filter(Boolean);
-  const numLaminations = (layer4 ? 1 : 0) + middleLayers.length; // lamination steps needed
+  const middleLayers = [layer2, layer3, layer4].filter(Boolean);
+  const numLaminations = (layer5 ? 1 : 0) + middleLayers.length; // lamination steps needed
 
   // ── 1. KÍCH THƯỚC CƠ BẢN ──
   const bagArea = spreadWidth * cutStep;
@@ -46,64 +47,31 @@ function calculate(input) {
   const cutWaste = cutMeters / 3000 * 20 + 100;
   const cutWastePercent = numLaminations <= 1 ? 3 : 6;
 
-  // ── 3. GHÉP - Build lamination chain from innermost (layer4) outward ──
-  // Each lamination step ghéps one more layer onto the growing composite.
-  // Order: layer4 (seal) → layer3 (if exists) → layer2 (if exists) → layer1 (print)
+  // ── 3. GHÉP - Build lamination chain from innermost outward ──
+  const laminations = [];
+  // Track both the layer material and its actual layer number (2-5)
+  const lamChain = [
+    { layer: layer5, num: 5 }, { layer: layer4, num: 4 },
+    { layer: layer3, num: 3 }, { layer: layer2, num: 2 }
+  ].filter(item => !!item.layer);
+  let currentNeededMeters = cutMeters + cutWaste;
 
-  // Ghép Lần 1: Layer 4 (seal/inner) - optional now
-  let lam1Width = 0, lam1Meters = 0, lam1Waste = 0, lam1TotalCost = 0;
-  let lam1CostCPSX = 0, lam1CostMaterial = 0, lam1CPSX = 0;
-  if (layer4) {
-    lam1Width = cutWidth + 0.02;
-    lam1Meters = cutMeters + cutWaste;
-    lam1Waste = lam1Meters / 3000 * 20 + 100;
-    lam1CPSX = CONSTANTS.ghepCPSX;
-    lam1CostCPSX = lam1CPSX * (lam1Waste + lam1Meters) * lam1Width;
-    lam1CostMaterial = layer4.pricePerM2 * (lam1Waste + lam1Meters) * lam1Width;
-    lam1TotalCost = lam1CostCPSX + lam1CostMaterial;
-  }
+  lamChain.forEach(({ layer, num }) => {
+    const width = cutWidth + 0.02;
+    const meters = currentNeededMeters;
+    const waste = meters / 3000 * 20 + 100;
+    const cpsx = CONSTANTS.ghepCPSX;
+    const costCPSX = cpsx * (waste + meters) * width;
+    const costMat = layer.pricePerM2 * (waste + meters) * width;
+    
+    laminations.unshift({
+      layerNum: num, material: layer, width, meters, waste, cpsx, costCPSX, costMat, total: costCPSX + costMat
+    });
+    currentNeededMeters = meters + waste;
+  });
 
-  // Ghép Lần 2: Layer 3 (optional)
-  let lam2Width = 0, lam2Meters = 0, lam2Waste = 0, lam2TotalCost = 0;
-  let lam2CostCPSX = 0, lam2CostMaterial = 0, lam2CPSX = 0;
-  if (layer3) {
-    lam2Width = cutWidth + 0.02;
-    lam2Meters = lam1Meters + lam1Waste;
-    lam2Waste = lam2Meters / 3000 * 20 + 100;
-    lam2CPSX = CONSTANTS.ghepCPSX;
-    lam2CostCPSX = lam2CPSX * (lam2Waste + lam2Meters) * lam2Width;
-    lam2CostMaterial = layer3.pricePerM2 * (lam2Waste + lam2Meters) * lam2Width;
-    lam2TotalCost = lam2CostCPSX + lam2CostMaterial;
-  }
-
-  // Ghép Lần 3: Layer 2 (optional)
-  let lam3Width = 0, lam3Meters = 0, lam3Waste = 0, lam3TotalCost = 0;
-  let lam3CostCPSX = 0, lam3CostMaterial = 0, lam3CPSX = 0;
-  if (layer2) {
-    lam3Width = cutWidth + 0.02;
-    // Chain: layer3 → layer4 → cut stage
-    let prevMeters, prevWaste;
-    if (layer3) {
-      prevMeters = lam2Meters;
-      prevWaste = lam2Waste;
-    } else if (layer4) {
-      prevMeters = lam1Meters;
-      prevWaste = lam1Waste;
-    } else {
-      // Only Layer1 + Layer2, no Layer3/4: base from cut stage
-      prevMeters = cutMeters;
-      prevWaste = cutWaste;
-    }
-    lam3Meters = prevMeters + prevWaste;
-    lam3Waste = lam3Meters / 3000 * 20 + 100;
-    lam3CPSX = CONSTANTS.ghepCPSX;
-    lam3CostCPSX = lam3CPSX * (lam3Waste + lam3Meters) * lam3Width;
-    lam3CostMaterial = layer2.pricePerM2 * (lam3Waste + lam3Meters) * lam3Width;
-    lam3TotalCost = lam3CostCPSX + lam3CostMaterial;
-  }
-
-  // Total lamination waste for print meters
-  const totalLamWaste = lam1Waste + (layer3 ? lam2Waste : 0) + (layer2 ? lam3Waste : 0);
+  const totalLamWaste = laminations.reduce((sum, lam) => sum + lam.waste, 0);
+  const totalLamCost = laminations.reduce((sum, lam) => sum + lam.total, 0);
 
   // ── 4. CPSX IN - Lớp 1 (ngoài) ──
   const printNLWidth = cutWidth + 0.02;
@@ -141,7 +109,6 @@ function calculate(input) {
   const cutTotalCost = cutCostCPSX;
 
   // ── 6. TỔNG GIÁ VỐN ──
-  const totalLamCost = lam1TotalCost + lam2TotalCost + lam3TotalCost;
   const totalProductionCost = printTotalCost + totalLamCost + cutTotalCost;
 
   // ── 7. LỢI NHUẬN ──
@@ -156,17 +123,16 @@ function calculate(input) {
   const totalThickness = layer1.thickness
     + (layer2 ? layer2.thickness : 0)
     + (layer3 ? layer3.thickness : 0)
-    + (layer4 ? layer4.thickness : 0);
+    + (layer4 ? layer4.thickness : 0)
+    + (layer5 ? layer5.thickness : 0);
 
   // Tổng tỉ trọng (g/m²)
-  // density lưu theo g/cm³ → g/m³ (×1.000.000)
-  // thickness lưu theo mic → m (÷1.000.000)
-  // g/m² = thickness(m) × density(g/m³) = (mic/1e6) × (g_cm3 × 1e6) = mic × g_cm3
   const layerGSM = (thk, dens) => (thk / 1000000) * (dens * 1000000);
   const totalGSM = layerGSM(layer1.thickness, layer1.density)
     + (layer2 ? layerGSM(layer2.thickness, layer2.density) : 0)
     + (layer3 ? layerGSM(layer3.thickness, layer3.density) : 0)
-    + (layer4 ? layerGSM(layer4.thickness, layer4.density) : 0);
+    + (layer4 ? layerGSM(layer4.thickness, layer4.density) : 0)
+    + (layer5 ? layerGSM(layer5.thickness, layer5.density) : 0);
 
   // Zipper
   const zipperTotal = hasZipper ? (cutMeters + cutWaste) * CONSTANTS.zipperPrice : 0;
@@ -224,6 +190,7 @@ function calculate(input) {
   if (layer2) structureText += '//' + layer2.name + ' ' + layer2.thickness;
   if (layer3) structureText += '//' + layer3.name + ' ' + layer3.thickness;
   if (layer4) structureText += '//' + layer4.name + ' ' + layer4.thickness;
+  if (layer5) structureText += '//' + layer5.name + ' ' + layer5.thickness;
 
   return {
     // Đầu vào
@@ -234,18 +201,7 @@ function calculate(input) {
 
     // Kích thước
     bagArea, totalArea, printWidth, filmLength,
-
-    // Cắt
     cutWidth, cutMeters, cutWaste, cutWastePercent, cutCPSX, cutCostCPSX, cutTotalCost,
-
-    // Ghép 1 (Layer 4 - seal)
-    lam1Width, lam1Meters, lam1Waste, lam1CPSX, lam1CostCPSX, lam1CostMaterial, lam1TotalCost,
-
-    // Ghép 2 (Layer 3 - optional)
-    lam2Width, lam2Meters, lam2Waste, lam2CPSX, lam2CostCPSX, lam2CostMaterial, lam2TotalCost,
-
-    // Ghép 3 (Layer 2 - optional)
-    lam3Width, lam3Meters, lam3Waste, lam3CPSX, lam3CostCPSX, lam3CostMaterial, lam3TotalCost,
 
     // In
     printNLWidth, printMeters, printWaste, printCPSX, printCostCPSX, printCostMaterial, printTotalCost,
@@ -274,9 +230,7 @@ function calculate(input) {
     // Chi tiết layers
     layers: {
       print: { material: layer1, width: printNLWidth, meters: printMeters, waste: printWaste, cpsx: printCPSX, costCPSX: printCostCPSX, costMat: printCostMaterial, total: printTotalCost },
-      lam1: layer4 ? { material: layer4, width: lam1Width, meters: lam1Meters, waste: lam1Waste, costCPSX: lam1CostCPSX, costMat: lam1CostMaterial, total: lam1TotalCost } : null,
-      lam2: layer3 ? { material: layer3, width: lam2Width, meters: lam2Meters, waste: lam2Waste, costCPSX: lam2CostCPSX, costMat: lam2CostMaterial, total: lam2TotalCost } : null,
-      lam3: layer2 ? { material: layer2, width: lam3Width, meters: lam3Meters, waste: lam3Waste, costCPSX: lam3CostCPSX, costMat: lam3CostMaterial, total: lam3TotalCost } : null,
+      laminations, // Array of laminated layers from outermost (Layer 2) to innermost
       cut: { width: cutWidth, meters: cutMeters, waste: cutWaste, cpsx: cutCPSX, costCPSX: cutCostCPSX, total: cutTotalCost },
     }
   };

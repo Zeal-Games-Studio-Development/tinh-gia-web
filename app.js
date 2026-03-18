@@ -17,7 +17,7 @@ function parseFmtNumber(val) {
 
 /** Format a number into Vietnamese thousand-separator string: 30000 → "30.000" */
 function fmtInput(n) {
-  if (n == null || isNaN(n) || n === 0) return '0';
+  if (n == null || isNaN(n) || n === 0) return '';
   // Handle decimals: only format the integer part
   const str = String(n);
   const parts = str.split('.');
@@ -29,15 +29,22 @@ function fmtInput(n) {
 function setupFmtInputs() {
   document.querySelectorAll('[data-fmt="number"]').forEach(el => {
     el.addEventListener('input', () => {
+      const val = el.value;
+      // Allow empty
+      if (val === '') return;
+      // Don't interrupt while typing a separator (e.g. "30." user may continue)
+      if (val.endsWith('.') || val.endsWith(',')) return;
+      const raw = parseFmtNumber(val);
+      // If raw is 0 and user typed something non-empty, let them continue typing
+      if (raw === 0 && val.replace(/[.,]/g, '') === '') return;
+      if (raw === 0) return; // allow clearing
       const cursorPos = el.selectionStart;
-      const oldLen = el.value.length;
-      const raw = parseFmtNumber(el.value);
-      if (raw === 0 && el.value === '') return; // allow empty
+      const oldLen = val.length;
       const formatted = fmtInput(raw);
+      if (formatted === val) return; // no change needed
       el.value = formatted;
       // Adjust cursor position after formatting
-      const newLen = formatted.length;
-      const diff = newLen - oldLen;
+      const diff = formatted.length - oldLen;
       el.setSelectionRange(cursorPos + diff, cursorPos + diff);
     });
     el.addEventListener('focus', () => {
@@ -46,6 +53,9 @@ function setupFmtInputs() {
     });
   });
 }
+
+// dotFmt, parseDotFmt, fmtCfgInput — defined fully in the Config section below
+
 
 /** Set a formatted input's value programmatically */
 function setFmtValue(id, num) {
@@ -217,6 +227,8 @@ function loadDisplayPreferences() {
   }
 }
 
+// resetForm — defined fully later in the file
+
 // ══════════════════════════════════════════════
 // TOAST NOTIFICATION
 // ══════════════════════════════════════════════
@@ -306,7 +318,7 @@ function validateOrderInfo() {
 // DROPDOWNS
 // ══════════════════════════════════════════════
 function populateDropdowns() {
-  const layerSelects = [1, 2, 3, 4].map(i => document.getElementById('layer' + i));
+  const layerSelects = [1, 2, 3, 4, 5].map(i => document.getElementById('layer' + i));
   const layer1OnlyGroups = ['BOPP', 'Matt OPP'];
 
   const groups = {};
@@ -338,7 +350,7 @@ function populateDropdowns() {
     select.addEventListener('change', () => handleLayerChange(index + 1));
   });
 
-  [1, 2, 3, 4].forEach(i => {
+  [1, 2, 3, 4, 5].forEach(i => {
     const selectMic = document.getElementById('micSelect' + i);
     if(selectMic) {
       selectMic.addEventListener('change', () => {
@@ -383,6 +395,30 @@ function handleLayerChange(layerNum) {
         micInput.value = '';
       }
       if(micSelect) micSelect.style.display = 'none';
+    }
+  }
+
+  // ── Ràng buộc thứ tự: lớp N+1 chỉ được bật khi lớp N đã chọn ──
+  if (layerNum >= 1 && layerNum <= 4) {
+    const nextSelect = document.getElementById('layer' + (layerNum + 1));
+    if (nextSelect) {
+      if (!val) {
+        // Cascade: tắt và xóa tất cả lớp phía sau
+        for (let i = layerNum + 1; i <= 5; i++) {
+          const s = document.getElementById('layer' + i);
+          if (!s) continue;
+          s.value = '';
+          s.disabled = true;
+          const ma = document.getElementById('micAdjust' + i);
+          if (ma) ma.style.display = 'none';
+          const mi = document.getElementById('micLayer' + i);
+          if (mi) { mi.style.display = 'none'; mi.value = ''; }
+          const ms = document.getElementById('micSelect' + i);
+          if (ms) ms.style.display = 'none';
+        }
+      } else {
+        nextSelect.disabled = false;
+      }
     }
   }
 }
@@ -466,7 +502,7 @@ function getActualLayerId(layerNum) {
 }
 
 function updateStructurePreview() {
-  const layers = [1, 2, 3, 4].map(i => {
+  const layers = [1, 2, 3, 4, 5].map(i => {
     const id = getActualLayerId(i);
     const mat = id ? getMaterial(id) : null;
     const micInput = document.getElementById('micLayer' + i);
@@ -523,7 +559,7 @@ function switchView(view) {
 function gatherInput() {
   // Collect custom mic overrides
   const micOverrides = {};
-  [1, 2, 3, 4].forEach(i => {
+  [1, 2, 3, 4, 5].forEach(i => {
     const micInput = document.getElementById('micLayer' + i);
     if (micInput && micInput.style.display !== 'none' && micInput.value) {
       micOverrides['layer' + i] = parseInt(micInput.value);
@@ -556,6 +592,7 @@ function gatherInput() {
     layer2Id: getActualLayerId(2),
     layer3Id: getActualLayerId(3),
     layer4Id: getActualLayerId(4),
+    layer5Id: getActualLayerId(5),
     spreadWidth: parseFloat(document.getElementById('spreadWidth').value) || 0,
     cutStep: parseFloat(document.getElementById('cutStep').value) || 0,
     metallicSurcharge: (document.getElementById('hasNhu').checked ? CONSTANTS.nhuPrice : 0)
@@ -791,9 +828,11 @@ function renderManagerView(r) {
   const rows = [
     ['CPSX IN', r.layers.print.material.name, fmt(r.printCostCPSX), fmt(r.printCostMaterial), fmt(r.printTotalCost)],
   ];
-  if (r.layers.lam1) rows.push(['GHÉP L1 (Lớp 4)', r.layers.lam1.material.name, fmt(r.lam1CostCPSX), fmt(r.lam1CostMaterial), fmt(r.lam1TotalCost)]);
-  if (r.layers.lam2) rows.push(['GHÉP L2 (Lớp 3)', r.layers.lam2.material.name, fmt(r.lam2CostCPSX), fmt(r.lam2CostMaterial), fmt(r.lam2TotalCost)]);
-  if (r.layers.lam3) rows.push(['GHÉP L3 (Lớp 2)', r.layers.lam3.material.name, fmt(r.lam3CostCPSX), fmt(r.lam3CostMaterial), fmt(r.lam3TotalCost)]);
+  if (r.layers.laminations) {
+    r.layers.laminations.forEach(lam => {
+      rows.push([`GHÉP (Lớp ${lam.layerNum})`, lam.material.name, fmt(lam.costCPSX), fmt(lam.costMat), fmt(lam.total)]);
+    });
+  }
   rows.push(['CPSX CẮT', '—', fmt(r.cutCostCPSX), '0', fmt(r.cutTotalCost)]);
 
   document.getElementById('m-cost-table').innerHTML = `
@@ -854,42 +893,18 @@ function renderTechView(r) {
     matPrice: r.layers.print.material.pricePerM2, costMat: r.printCostMaterial
   });
 
-  // GHÉP L3 (Lớp 2)
-  if (r.layers.lam3) {
-    const lamInput = r.lam3Meters + r.lam3Waste;
-    totalCPSX += r.lam3CostCPSX;
-    totalCPVL += r.lam3CostMaterial;
-    uniRows.push({
-      stage: 'GHÉP L3 (Lớp 2)', mat: r.layers.lam3.material.name,
-      width: r.lam3Width, meters: r.lam3Meters, waste: r.lam3Waste,
-      input: lamInput, cpsx: CONSTANTS.ghepCPSX, costCPSX: r.lam3CostCPSX,
-      matPrice: r.layers.lam3.material.pricePerM2, costMat: r.lam3CostMaterial
-    });
-  }
-
-  // GHÉP L2 (Lớp 3)
-  if (r.layers.lam2) {
-    const lamInput = r.lam2Meters + r.lam2Waste;
-    totalCPSX += r.lam2CostCPSX;
-    totalCPVL += r.lam2CostMaterial;
-    uniRows.push({
-      stage: 'GHÉP L2 (Lớp 3)', mat: r.layers.lam2.material.name,
-      width: r.lam2Width, meters: r.lam2Meters, waste: r.lam2Waste,
-      input: lamInput, cpsx: CONSTANTS.ghepCPSX, costCPSX: r.lam2CostCPSX,
-      matPrice: r.layers.lam2.material.pricePerM2, costMat: r.lam2CostMaterial
-    });
-  }
-
-  // GHÉP L1 (Lớp 4)
-  if (r.layers.lam1) {
-    const lamInput = r.lam1Meters + r.lam1Waste;
-    totalCPSX += r.lam1CostCPSX;
-    totalCPVL += r.lam1CostMaterial;
-    uniRows.push({
-      stage: 'GHÉP L1 (Lớp 4)', mat: r.layers.lam1.material.name,
-      width: r.lam1Width, meters: r.lam1Meters, waste: r.lam1Waste,
-      input: lamInput, cpsx: CONSTANTS.ghepCPSX, costCPSX: r.lam1CostCPSX,
-      matPrice: r.layers.lam1.material.pricePerM2, costMat: r.lam1CostMaterial
+  // GHÉP LÁMINATIONS (Từ Lớp 2 đến Lớp 5)
+  if (r.layers.laminations) {
+    r.layers.laminations.forEach((lam, idx) => {
+      const lamInput = lam.meters + lam.waste;
+      totalCPSX += lam.costCPSX;
+      totalCPVL += lam.costMat;
+      uniRows.push({
+        stage: `GHÉP (Lớp ${lam.layerNum})`, mat: lam.material.name,
+        width: lam.width, meters: lam.meters, waste: lam.waste,
+        input: lamInput, cpsx: CONSTANTS.ghepCPSX, costCPSX: lam.costCPSX,
+        matPrice: lam.material.pricePerM2, costMat: lam.costMat
+      });
     });
   }
 
@@ -991,15 +1006,20 @@ function renderMOQView(r) {
 
   // Detect active layers from the current result for column headers
   const matCols = [];
-  if (r.layers.print) matCols.push({ key: 'print', name: r.layers.print.material.name.split(' ')[0] });
-  if (r.layers.lam3) matCols.push({ key: 'lam3', name: r.layers.lam3.material.name.split(' ')[0] });
-  if (r.layers.lam2) matCols.push({ key: 'lam2', name: r.layers.lam2.material.name.split(' ')[0] });
-  if (r.layers.lam1) matCols.push({ key: 'lam1', name: r.layers.lam1.material.name.split(' ')[0] });
+  if (r.layers.print) matCols.push({ type: 'print', name: r.layers.print.material.name.split(' ')[0] });
+  if (r.layers.laminations) {
+    r.layers.laminations.forEach(lam => {
+      matCols.push({ type: 'lam', layerNum: lam.layerNum, name: lam.material.name.split(' ')[0] });
+    });
+  }
 
-  const getLayerMeters = (res, key) => {
-    const layer = res.layers[key];
-    if (!layer) return 0;
-    return layer.meters + layer.waste;
+  const getLayerData = (res, col) => {
+    if (col.type === 'print') return res.layers.print || null;
+    return res.layers.laminations?.find(l => l.layerNum === col.layerNum) || null;
+  };
+  const getLayerMeters = (res, col) => {
+    const d = getLayerData(res, col);
+    return d ? d.meters + d.waste : 0;
   };
 
   const calcKg = (layerMat, meters, width) => {
@@ -1017,10 +1037,9 @@ function renderMOQView(r) {
     results.push({ qty, res, isCurrent });
 
     const matCells = matCols.map(col => {
-      const layerMeters = getLayerMeters(res, col.key);
-      const layerMat = res.layers[col.key]?.material;
-      const layerWidth = res.layers[col.key]?.width || 0;
-      const kg = calcKg(layerMat, layerMeters, layerWidth);
+      const layerData = getLayerData(res, col);
+      const layerMeters = layerData ? layerData.meters + layerData.waste : 0;
+      const kg = calcKg(layerData?.material, layerMeters, layerData?.width || 0);
       return `<td>${fmt(layerMeters, 0)} m<br><span style="font-size:0.75rem;color:var(--muted);font-weight:400;">(${fmt(kg, 1)} kg)</span></td>`;
     }).join('');
 
@@ -1045,13 +1064,13 @@ function renderMOQView(r) {
   `;
 
   // Render roll-based MOQ table
-  renderRollMOQ(r, baseInput, matCols, getLayerMeters);
+  renderRollMOQ(r, baseInput, matCols, getLayerMeters, getLayerData);
 }
 
 // ══════════════════════════════════════════════
 // MOQ THEO CUỘN MÀNG
 // ══════════════════════════════════════════════
-function renderRollMOQ(r, baseInput, matCols, getLayerMeters) {
+function renderRollMOQ(r, baseInput, matCols, getLayerMeters, getLayerData) {
   const printMat = r.layers.print.material;
   const rollLen = printMat.rollLength || 6000;
   const printName = printMat.name.split(' ')[0];
@@ -1065,7 +1084,7 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters) {
   const rollLevels = [1, 2, 3, 4, 5, 6];
 
   // Build columns for other layers (non-print) showing meters + kg
-  const otherLayers = matCols.filter(c => c.key !== 'print');
+  const otherLayers = matCols.filter(c => c.type !== 'print');
 
   // Helper: compute kg from meters for a given layer
   const calcKg = (layerMat, meters, width) => {
@@ -1109,10 +1128,9 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters) {
 
     // Build cells for other layers: meters + kg
     const otherCells = otherLayers.map(col => {
-      const layerMeters = getLayerMeters(res, col.key);
-      const layerMat = res.layers[col.key]?.material;
-      const layerWidth = res.layers[col.key]?.width || 0;
-      const kg = calcKg(layerMat, layerMeters, layerWidth);
+      const layerData = getLayerData(res, col);
+      const layerMeters = layerData ? layerData.meters + layerData.waste : 0;
+      const kg = calcKg(layerData?.material, layerMeters, layerData?.width || 0);
       return `<td>${fmt(layerMeters, 0)} m<br><span style="font-size:0.75rem;color:var(--muted);font-weight:400;">(${fmt(kg, 1)} kg)</span></td>`;
     }).join('');
 
@@ -1157,9 +1175,10 @@ function renderBentoView(r) {
 
   // Layer blocks
   const l1 = r.layers.print.material;
-  const l2 = r.layers.lam3 ? r.layers.lam3.material : null;
-  const l3 = r.layers.lam2 ? r.layers.lam2.material : null;
-  const l4 = r.layers.lam1 ? r.layers.lam1.material : null;
+  const lamMats = (r.layers.laminations || []).map(lam => lam.material);
+  const l2 = lamMats[0] || null;
+  const l3 = lamMats[1] || null;
+  const l4 = lamMats[2] || null;
 
   const makeBlock = (mat) => {
     if (mat) {
@@ -1408,10 +1427,15 @@ function loadFromHistory(id) {
   handleSubType();
   setFmtValue('quantity', inp.quantity || 0);
   document.getElementById('numColors').value = inp.numColors != null ? inp.numColors : 4;
+  // Mở khóa tất cả lớp trước khi gán giá trị (sequential enforcement có thể đã disable)
+  [1, 2, 3, 4, 5].forEach(i => { const s = document.getElementById('layer' + i); if (s) s.disabled = false; });
   document.getElementById('layer1').value = inp.layer1Id || 'PET';
   document.getElementById('layer2').value = inp.layer2Id || '';
   document.getElementById('layer3').value = inp.layer3Id || '';
   document.getElementById('layer4').value = inp.layer4Id || 'LLDPE';
+  document.getElementById('layer5').value = inp.layer5Id || '';
+  // Áp dụng lại ràng buộc thứ tự theo giá trị vừa khôi phục
+  [1, 2, 3, 4, 5].forEach(i => handleLayerChange(i));
   document.getElementById('spreadWidth').value = inp.spreadWidth || 0.53;
   document.getElementById('cutStep').value = inp.cutStep || 0.145;
   document.getElementById('hasNhu').checked = (inp.metallicSurcharge || 0) >= CONSTANTS.nhuPrice;
@@ -1474,10 +1498,13 @@ function resetForm() {
   document.getElementById('productName').value = '';
   document.getElementById('quantity').value = '';
   document.getElementById('numColors').value = '';
+  // Mở khóa tất cả lớp trước khi reset (để set value=''), sequential sẽ disable lại sau
+  [1, 2, 3, 4, 5].forEach(i => { const s = document.getElementById('layer' + i); if (s) s.disabled = false; });
   document.getElementById('layer1').value = '';
   document.getElementById('layer2').value = '';
   document.getElementById('layer3').value = '';
   document.getElementById('layer4').value = '';
+  document.getElementById('layer5').value = '';
   document.getElementById('spreadWidth').value = '';
   document.getElementById('cutStep').value = '';
   document.getElementById('hasNhu').checked = false;
@@ -1504,7 +1531,7 @@ function resetForm() {
   document.getElementById('chotGia').value = '';
   document.getElementById('chotAnalysis').innerHTML = '';
   // Reset mic adjust inputs
-  [1, 2, 3, 4].forEach(i => handleLayerChange(i));
+  [1, 2, 3, 4, 5].forEach(i => handleLayerChange(i));
   currentResult = null;
   document.getElementById('emptyState').style.display = '';
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -1780,7 +1807,7 @@ function updatePrintWasteConfig(changedRowIndex) {
 }
 
 function updateLayerDropdowns() {
-  [1, 2, 3, 4].forEach(i => {
+  [1, 2, 3, 4, 5].forEach(i => {
     const sel = document.getElementById('layer' + i);
     if (!sel) return;
     const currentVal = sel.value;
@@ -2037,9 +2064,9 @@ function renderQuoteView(r) {
   // Format material string
   const mats = [];
   if (r.layers.print) mats.push(r.layers.print.material.name.split(' ')[0]);
-  if (r.layers.lam3) mats.push(r.layers.lam3.material.name.split(' ')[0]);
-  if (r.layers.lam2) mats.push(r.layers.lam2.material.name.split(' ')[0]);
-  if (r.layers.lam1) mats.push(r.layers.lam1.material.name.split(' ')[0]);
+  if (r.layers.laminations && r.layers.laminations.length > 0) {
+    [...r.layers.laminations].reverse().forEach(lam => mats.push(lam.material.name.split(' ')[0]));
+  }
   document.getElementById('quoteMaterial').value = mats.join(' / ');
   
   // Custom thickness (can be modified by user, only set if empty)
