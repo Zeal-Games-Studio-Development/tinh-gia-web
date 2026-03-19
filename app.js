@@ -775,26 +775,34 @@ function renderSaleView(r) {
     </div>
   `;
 
-  const displayCyl = r.cylinderCost > 0 ? r.cylinderCost : (r.input.cylUnitPrice || 7300000);
+  const cylPerUnit = r.cylinderCostPerUnit;
+  const numTr = r.input.numColors || 0;
+  const cylTotal = r.cylinderCost;
+
   document.getElementById('s-stats').innerHTML = `
-    <div class="stat-card green"><div class="stat-label">Lợi Nhuận</div><div class="stat-value">${fmt(r.profitAmount / 1000000, 2)}tr (${fmtPercent(r.profitRate)})</div></div>
+    <div class="stat-card green"><div class="stat-label">Lợi Nhuận</div><div class="stat-value" style="font-size:1.15rem">${fmt(r.profitAmount)}đ <span style="font-size:0.85rem">(${fmtPercent(r.profitRate)})</span></div></div>
     <div class="stat-card cyan"><div class="stat-label">Doanh thu túi</div><div class="stat-value">${fmt(r.revenue)} đ</div></div>
     <div class="stat-card orange"><div class="stat-label">Giá Bán/Túi</div><div class="stat-value">${fmt(r.finalPrice, 0)} đ</div></div>
-    <div class="stat-card pink"><div class="stat-label">Trục in</div><div class="stat-value">${fmt(displayCyl / 1000000, 1)}tr</div></div>
+    <div class="stat-card pink"><div class="stat-label">Trục in</div><div class="stat-value" style="font-size:1.15rem">${fmt(cylTotal)} đ</div></div>
   `;
 
-  const items = [
+  const overviewItems = [
     ['<strong style="color:var(--cyan)">DOANH THU TỔNG</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--cyan)">${fmt(r.revenue)} đ</span>`],
-    ['<strong style="color:var(--green)">LỢI NHUẬN XƯỞNG</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--green)">${fmt(r.profitAmount / 1000000, 2)} tr (${fmtPercent(r.profitRate)})</span>`],
-    ['<strong style="color:var(--pink)">GIÁ TRỤC IN</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--pink)">${fmt(displayCyl / 1000000, 1)} tr</span>`],
-    ['Giá vốn gốc + LN', fmt(r.costPerUnit, 1) + ' đ'],
+    ['<strong style="color:var(--green)">LỢI NHUẬN XƯỞNG</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--green)">${fmt(r.profitAmount)} đ (${fmtPercent(r.profitRate)})</span>`],
+    ['<strong style="color:var(--pink)">GIÁ TRỤC IN</strong>', `<span style="font-weight:700; font-size:0.95em; color:var(--pink)">${fmt(cylPerUnit)} đ/trục × ${numTr} trục = <span style="font-size:1.1em">${fmt(cylTotal)} đ</span></span>`],
+  ];
+  document.getElementById('s-overview').innerHTML = overviewItems.map(([l, v]) =>
+    `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`
+  ).join('');
+
+  const items = [
+    [`Giá ban đầu (Vốn + ${fmtPercent(r.profitRate)} LN)`, fmt(r.costPerUnit, 1) + ' đ'],
     ['Chi phí Zipper', fmt(r.zipperPerUnit, 1) + ' đ'],
     ['Chi phí Thùng giấy', fmt(r.boxPerUnit, 1) + ' đ'],
     ['Chi phí Vận chuyển', fmt(r.shippingPerUnit, 1) + ' đ'],
     [`Lãi vay vốn (${fmtPercent(r.interestRate30)})`, fmt(r.interestPerUnit, 1) + ' đ'],
     ['Hoa hồng kinh doanh', fmt(r.commissionPerUnit, 1) + ' đ'],
   ];
-
   document.getElementById('s-breakdown').innerHTML = items.map(([l, v]) =>
     `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`
   ).join('') + `<li class="bl-total"><span class="bl-label" style="color:var(--orange)">GIÁ BÁN ĐỀ XUẤT / TÚI</span><span class="bl-value" style="color:var(--orange)">${fmt(r.finalPrice, 0)} đ</span></li>`;
