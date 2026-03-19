@@ -35,10 +35,13 @@ function calculate(input) {
   const middleLayers = [layer2, layer3, layer4].filter(Boolean);
   const numLaminations = (layer5 ? 1 : 0) + middleLayers.length; // lamination steps needed
 
+  const numImages = input.numImages || 1;
+
   // ── 1. KÍCH THƯỚC CƠ BẢN ──
   const bagArea = spreadWidth * cutStep;
   const totalArea = quantity * bagArea;
-  const printWidth = spreadWidth > 0.4 ? spreadWidth : spreadWidth * 2;
+  // Khổ in = Khổ trải × số con hình + 0.02m biên (nhất quán với bảng kỹ thuật)
+  const printWidth = spreadWidth * numImages + 0.02;
   const filmLength = totalArea / printWidth;
 
   // ── 2. CPSX CẮT ──
@@ -143,22 +146,22 @@ function calculate(input) {
   const zipperPerUnit = zipperTotal / quantity;
 
   // Thùng giấy
-  const actualBagsPerBox = bagsPerBox || CONSTANTS.bagsPerBoxDefault;
-  const actualBoxPrice = boxPrice || CONSTANTS.boxPriceDefault;
-  const numBoxes = quantity / actualBagsPerBox;
+  const actualBagsPerBox = bagsPerBox || 0;
+  const actualBoxPrice = boxPrice || 0;
+  const numBoxes = actualBagsPerBox > 0 ? quantity / actualBagsPerBox : 0;
   const boxTotal = actualBoxPrice * numBoxes;
-  const boxPerUnit = boxTotal / quantity;
+  const boxPerUnit = quantity > 0 ? boxTotal / quantity : 0;
 
   // Tare (gr/cái) = Tổng tỉ trọng (g/m²) × diện tích túi (m²)
   const tareWeight = totalGSM * bagArea + handleWeight;
 
   // Vận chuyển
-  const actualShippingPerKm = shippingPerKm || CONSTANTS.shippingPerKmDefault;
-  const actualShippingKm = shippingKm || CONSTANTS.shippingKmDefault;
+  const actualShippingPerKm = shippingPerKm || 0;
+  const actualShippingKm = shippingKm || 0;
   const shippingRate = actualShippingPerKm * actualShippingKm;
   const totalWeightTons = tareWeight * quantity / 1000000;
   const shippingTotal = totalWeightTons * shippingRate;
-  const shippingPerUnit = shippingTotal / quantity;
+  const shippingPerUnit = quantity > 0 ? shippingTotal / quantity : 0;
 
   // Lãi vay — direct rate from payment term selection
   const paymentDays = input.paymentDays || 30;

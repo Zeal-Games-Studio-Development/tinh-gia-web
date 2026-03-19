@@ -465,12 +465,15 @@ function autoCalcCylinder() {
   }
   
   if (!isNaN(spreadWidth) && spreadWidth > 0) {
-    let baseWidth = spreadWidth * n;
-    if (baseWidth < 0.7) {
-      document.getElementById('cylLength').value = 0.7; // min là 700mm
-    } else {
-      document.getElementById('cylLength').value = +(baseWidth + 0.1).toFixed(3);
+    let nCalc = 1;
+    while (spreadWidth * nCalc + 0.1 < 0.7) {
+      nCalc++;
     }
+    let calcLength = spreadWidth * nCalc + 0.1;
+    if (calcLength > 1.25) {
+      calcLength = 1.25; // max là 1250mm
+    }
+    document.getElementById('cylLength').value = +calcLength.toFixed(3);
   } else {
     document.getElementById('cylLength').value = '';
   }
@@ -932,8 +935,8 @@ function renderTechView(r) {
   const tStatsHTML = `
     <div class="stat-card accent"><div class="stat-label">Đầu Vào Khâu In</div><div class="stat-value">${fmt(r.printMeters + r.printWaste, 0)} m</div></div>
     <div class="stat-card cyan"><div class="stat-label">Đầu Vào Khâu Cắt</div><div class="stat-value">${fmt(r.cutMeters + r.cutWaste, 0)} m</div></div>
-    <div class="stat-card green"><div class="stat-label">Khổ Thành Phẩm</div><div class="stat-value">${fmt(r.printWidth * 100, 1)} cm</div></div>
-    <div class="stat-card orange"><div class="stat-label">Khổ Màng NL</div><div class="stat-value">${fmt((r.input.spreadWidth * r.input.numImages + 0.02) * 100, 1)} cm</div></div>
+    <div class="stat-card green"><div class="stat-label">Khổ Thành Phẩm</div><div class="stat-value">${fmt(r.printWidth, 3)} m</div></div>
+    <div class="stat-card orange"><div class="stat-label">Khổ Màng NL</div><div class="stat-value">${fmt(r.input.spreadWidth * r.input.numImages + 0.02, 3)} m</div></div>
   `;
   document.getElementById('t-stats').innerHTML = tStatsHTML;
   document.getElementById('m-t-stats').innerHTML = tStatsHTML;
@@ -1409,12 +1412,12 @@ function renderBentoView(r) {
         </div>
         <div class="bento-bar-row">
           <div class="bento-bar-label">Thùng tổng</div>
-          <div class="bento-bar-track"><div class="bento-bar-fill" style="width:${Math.max(r.boxTotal / r.cylinderCost * 100, 5)}%;background:var(--green)">${fmt(r.boxTotal)}</div></div>
+          <div class="bento-bar-track"><div class="bento-bar-fill" style="width:${r.cylinderCost > 0 ? Math.max(r.boxTotal / r.cylinderCost * 100, 5) : 0}%;background:var(--green)">${fmt(r.boxTotal)}</div></div>
           <div class="bento-bar-amount">${fmt(r.boxTotal)}</div>
         </div>
         <div class="bento-bar-row">
           <div class="bento-bar-label">Vận chuyển</div>
-          <div class="bento-bar-track"><div class="bento-bar-fill" style="width:${Math.max(r.shippingTotal / r.cylinderCost * 100, 5)}%;background:var(--orange)">${fmt(r.shippingTotal)}</div></div>
+          <div class="bento-bar-track"><div class="bento-bar-fill" style="width:${r.cylinderCost > 0 ? Math.max(r.shippingTotal / r.cylinderCost * 100, 5) : 0}%;background:var(--orange)">${fmt(r.shippingTotal)}</div></div>
           <div class="bento-bar-amount">${fmt(r.shippingTotal)}</div>
         </div>
       </div>
@@ -1541,7 +1544,7 @@ function loadFromHistory(id) {
   document.getElementById('layer1').value = inp.layer1Id || 'PET';
   document.getElementById('layer2').value = inp.layer2Id || '';
   document.getElementById('layer3').value = inp.layer3Id || '';
-  document.getElementById('layer4').value = inp.layer4Id || 'LLDPE';
+  document.getElementById('layer4').value = inp.layer4Id || '';
   document.getElementById('layer5').value = inp.layer5Id || '';
   // Áp dụng lại ràng buộc thứ tự theo giá trị vừa khôi phục
   [1, 2, 3, 4, 5].forEach(i => handleLayerChange(i));
@@ -1550,7 +1553,6 @@ function loadFromHistory(id) {
   document.getElementById('hasNhu').checked = (inp.metallicSurcharge || 0) >= CONSTANTS.nhuPrice;
   document.getElementById('hasMo').checked = (inp.metallicSurcharge || 0) >= (CONSTANTS.nhuPrice + CONSTANTS.moPrice);
   document.getElementById('coverage').value = (inp.coverageRatio || 1) * 100;
-  document.getElementById('handleWeight').value = inp.handleWeight || 0;
   document.getElementById('hasZipper').checked = inp.hasZipper || false;
   // Restore payment term
   const savedDays = String(inp.paymentDays || 30);
@@ -1571,10 +1573,10 @@ function loadFromHistory(id) {
     document.getElementById('commissionUnit').value = 'percent';
     document.getElementById('commission').value = inp.commissionInputValue || (inp.commissionRate || 0) * 100;
   }
-  setFmtValue('bagsPerBox', inp.bagsPerBox || 1000);
-  setFmtValue('boxPrice', inp.boxPrice || 18000);
-  setFmtValue('shippingPerKm', inp.shippingPerKm || 5000);
-  document.getElementById('shippingKm').value = inp.shippingKm || 200;
+  setFmtValue('bagsPerBox', inp.bagsPerBox || 0);
+  setFmtValue('boxPrice', inp.boxPrice || 0);
+  setFmtValue('shippingPerKm', inp.shippingPerKm || 0);
+  document.getElementById('shippingKm').value = inp.shippingKm || 0;
   if (item.chotGia) setFmtValue('chotGia', item.chotGia);
   updateStructurePreview();
   doCalculate();
