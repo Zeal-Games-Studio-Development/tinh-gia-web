@@ -476,7 +476,11 @@ function autoCalcCylinder() {
   }
   
   if (!isNaN(cutStep) && cutStep > 0) {
-    document.getElementById('cylCircum').value = +cutStep.toFixed(3);
+    let N = 1;
+    while (cutStep * N < 0.4) {
+      N++;
+    }
+    document.getElementById('cylCircum').value = +(cutStep * N).toFixed(3);
   } else {
     document.getElementById('cylCircum').value = '';
   }
@@ -761,42 +765,46 @@ function renderSaleView(r) {
     <div style="font-weight:600; color:var(--text); font-size:1.05rem; margin-bottom:12px;">${r.input.customer} — ${r.input.productName}</div>
     <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px 20px; font-size:0.9rem; margin:0 auto; max-width:600px;">
       <div><strong>Chất liệu:</strong> ${r.structureText}</div>
+      <div><strong>Số lượng:</strong> ${fmt(r.input.quantity)} túi</div>
       <div><strong>Số màu:</strong> ${numColorsText}</div>
       <div><strong>Kích thước:</strong> KT ${spreadMm} mm x BC ${cutMm} mm</div>
+      <div><strong>Độ dày:</strong> ${r.totalThickness} mic</div>
+      <div><strong>Diện tích:</strong> ${fmtM2(r.bagArea)}</div>
+      <div><strong>Trọng lượng:</strong> ${fmt(r.tareWeight, 2)} gr</div>
       <div><strong>Loại ${r.input.productType === 'mang' ? 'sản phẩm' : 'túi'}:</strong> ${bagStr}</div>
     </div>
   `;
 
+  const displayCyl = r.cylinderCost > 0 ? r.cylinderCost : (r.input.cylUnitPrice || 7300000);
   document.getElementById('s-stats').innerHTML = `
-    <div class="stat-card accent"><div class="stat-label">Giá vốn+LN/túi</div><div class="stat-value">${fmt(r.costPerUnit, 1)}</div></div>
-    <div class="stat-card green"><div class="stat-label">Tỉ lệ LN</div><div class="stat-value">${fmtPercent(r.profitRate)}</div></div>
-    <div class="stat-card cyan"><div class="stat-label">Doanh thu túi</div><div class="stat-value">${fmt(r.revenue / 1000000, 1)}tr</div></div>
-    <div class="stat-card orange"><div class="stat-label">Trục in</div><div class="stat-value">${fmt(r.cylinderCost / 1000000, 1)}tr</div></div>
+    <div class="stat-card green"><div class="stat-label">Lợi Nhuận</div><div class="stat-value">${fmt(r.profitAmount / 1000000, 2)}tr (${fmtPercent(r.profitRate)})</div></div>
+    <div class="stat-card cyan"><div class="stat-label">Doanh thu túi</div><div class="stat-value">${fmt(r.revenue)} đ</div></div>
+    <div class="stat-card orange"><div class="stat-label">Giá Bán/Túi</div><div class="stat-value">${fmt(r.finalPrice, 0)} đ</div></div>
+    <div class="stat-card pink"><div class="stat-label">Trục in</div><div class="stat-value">${fmt(displayCyl / 1000000, 1)}tr</div></div>
   `;
 
   const items = [
-    ['Giá vốn + LN', fmt(r.costPerUnit, 1)],
-    ['Zipper', fmt(r.zipperPerUnit, 1)],
-    ['Thùng giấy', fmt(r.boxPerUnit, 1)],
-    ['Vận chuyển', fmt(r.shippingPerUnit, 1)],
-    ['Lãi vay (' + fmtPercent(r.interestRate30) + ')', fmt(r.interestPerUnit, 1)],
-    ['Hoa hồng', fmt(r.commissionPerUnit, 1)],
+    ['<strong style="color:var(--cyan)">DOANH THU TỔNG</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--cyan)">${fmt(r.revenue)} đ</span>`],
+    ['<strong style="color:var(--green)">LỢI NHUẬN XƯỞNG</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--green)">${fmt(r.profitAmount / 1000000, 2)} tr (${fmtPercent(r.profitRate)})</span>`],
+    ['<strong style="color:var(--pink)">GIÁ TRỤC IN</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--pink)">${fmt(displayCyl / 1000000, 1)} tr</span>`],
+    ['Giá vốn gốc + LN', fmt(r.costPerUnit, 1) + ' đ'],
+    ['Chi phí Zipper', fmt(r.zipperPerUnit, 1) + ' đ'],
+    ['Chi phí Thùng giấy', fmt(r.boxPerUnit, 1) + ' đ'],
+    ['Chi phí Vận chuyển', fmt(r.shippingPerUnit, 1) + ' đ'],
+    [`Lãi vay vốn (${fmtPercent(r.interestRate30)})`, fmt(r.interestPerUnit, 1) + ' đ'],
+    ['Hoa hồng kinh doanh', fmt(r.commissionPerUnit, 1) + ' đ'],
   ];
+
   document.getElementById('s-breakdown').innerHTML = items.map(([l, v]) =>
-    `<li><span class="bl-label">${l}</span><span class="bl-value">${v} đ</span></li>`
-  ).join('') + `<li class="bl-total"><span class="bl-label">GIÁ ĐỀ XUẤT / TÚI</span><span class="bl-value">${fmt(r.finalPrice, 0)} đ</span></li>`;
+    `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`
+  ).join('') + `<li class="bl-total"><span class="bl-label" style="color:var(--orange)">GIÁ BÁN ĐỀ XUẤT / TÚI</span><span class="bl-value" style="color:var(--orange)">${fmt(r.finalPrice, 0)} đ</span></li>`;
 
-  document.getElementById('s-order-info').innerHTML = [
-    ['Khách hàng', r.input.customer],
-    ['Sản phẩm', r.input.productName],
-    ['Cấu trúc', r.structureText],
-    ['Số lượng', fmt(r.input.quantity) + ' túi'],
-    ['Khổ trải x Bước cắt', `${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`],
-    ['Diện tích túi', fmtM2(r.bagArea)],
-    ['Trọng lượng', fmt(r.tareWeight, 2) + ' gr/cái'],
-
-    ['Độ dày', r.totalThickness + ' mic'],
-  ].map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('');
+  const orderInfoEl = document.getElementById('s-order-info');
+  if (orderInfoEl) {
+    // Hide the 'Thông tin đơn hàng' card since we moved everything to the top header
+    const cardEl = orderInfoEl.closest('.card');
+    if (cardEl) cardEl.style.display = 'none';
+  }
 
   const hintEl = document.getElementById('profitRateHint');
   if (hintEl) {
@@ -854,13 +862,7 @@ function updateCylinderPreview() {
 // ══════════════════════════════════════════════
 function renderManagerView(r) {
   const total = r.totalProductionCost;
-  document.getElementById('m-stats').innerHTML = `
-    <div class="stat-card accent"><div class="stat-label">Tổng Giá Vốn SX</div><div class="stat-value">${fmt(total / 1000000, 2)}tr</div></div>
-    <div class="stat-card green"><div class="stat-label">Lợi Nhuận</div><div class="stat-value">${fmt(r.profitAmount / 1000000, 2)}tr (${fmtPercent(r.profitRate)})</div></div>
-    <div class="stat-card cyan"><div class="stat-label">Doanh Thu</div><div class="stat-value">${fmt(r.revenue / 1000000, 2)}tr</div></div>
-    <div class="stat-card orange"><div class="stat-label">Giá Bán/Túi</div><div class="stat-value">${fmt(r.finalPrice, 0)}đ</div></div>
-    <div class="stat-card pink"><div class="stat-label">Trục In (riêng)</div><div class="stat-value">${fmt(r.cylinderCost / 1000000, 1)}tr</div></div>
-  `;
+  document.getElementById('m-stats').innerHTML = ``;
 
   const pIn = r.printTotalCost / total * 100;
   const pLam = r.totalLamCost / total * 100;
@@ -1032,11 +1034,10 @@ function renderTechView(r) {
     ['Tổng diện tích đơn hàng', fmt(r.totalArea, 1) + ' m²'],
     ['Trọng lượng / túi (Tare)', fmt(r.tareWeight, 2) + ' gr'],
     ['Tổng trọng lượng', fmt(r.tareWeight * r.input.quantity / 1000, 1) + ' kg'],
-    ['Trọng lượng (tấn)', fmt(r.tareWeight * r.input.quantity / 1000000, 3) + ' tấn'],
-    ['Khổ trải x Bước cắt', `${+(r.input.spreadWidth * 1000).toFixed(0)} × ${+(r.input.cutStep * 1000).toFixed(0)} mm²`]
+    ['Trọng lượng (tấn)', fmt(r.tareWeight * r.input.quantity / 1000000, 3) + ' tấn']
   ];
 
-  const mWeightItems = [...tWeightItems, ['Giá trục in (bộ)', fmtVND(r.cylinderCost)]];
+  const mWeightItems = [...tWeightItems];
 
   document.getElementById('t-weight').innerHTML = tWeightItems.map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('');
   document.getElementById('m-t-weight').innerHTML = mWeightItems.map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('');
@@ -1122,25 +1123,59 @@ function renderMOQView(r) {
 // MOQ THEO CUỘN MÀNG
 // ══════════════════════════════════════════════
 function renderRollMOQ(r, baseInput, matCols, getLayerMeters, getLayerData) {
-  const printMat = r.layers.print.material;
-  const rollLen = printMat.rollLength || 6000;
-  const printName = printMat.name.split(' ')[0];
+  const rollOptions = matCols;
+  
+  if (rollOptions.length === 0) {
+    document.getElementById('moq-roll-table').innerHTML = '<tr><td>Không có lớp màng phù hợp để tính MOQ cuộn</td></tr>';
+    return;
+  }
 
-  // Estimate bags per meter of print film from current result
-  const totalPrintMeters = r.printMeters + r.printWaste;
-  const currentQty = baseInput.quantity;
-  const metersPerBag = totalPrintMeters / currentQty;
+  // Determine selected option
+  let selectedCol = rollOptions.find(c => {
+    let id = c.type === 'print' ? 'print' : `lam-${c.layerNum}`;
+    return id === window.selectedMoqRollMat;
+  });
 
-  // Build roll-based quantities (1 to 6 rolls of print layer)
-  const rollLevels = [1, 2, 3, 4, 5, 6];
+  if (!selectedCol) {
+    selectedCol = rollOptions[0]; // fallback to first
+  }
 
-  // Build columns for other layers (non-print) showing meters + kg
-  const otherLayers = matCols.filter(c => c.type !== 'print');
+  const selectedData = getLayerData(r, selectedCol);
+  const selectedMat = selectedData.material;
+  const rollLen = selectedMat.rollLength || 6000;
+  
+  // Total meters of the selected layer needed for the current quantity
+  const totalSelectedMeters = selectedData.meters + selectedData.waste;
+
+  // Build columns for other layers (non-selected) showing meters + kg
+  const otherLayers = matCols.filter(c => c !== selectedCol);
+  
+  // Check if selected base is kg-based (LLDPE or PE)
+  const isKgBase = selectedMat.name.toUpperCase().includes('LLDPE') || selectedMat.name.toUpperCase() === 'PE';
+
+  // Build dropdown HTML
+  let selectHTML = `<select class="form-select moq-mat-select" onchange="window.selectedMoqRollMat=this.value; doCalculate(true);" style="font-weight:700; color:var(--accent); border:1.5px solid var(--accent); padding:4px 24px 4px 8px; border-radius:6px; cursor:pointer; background:transparent; display:inline-block; font-size:0.85rem; margin:0; text-transform:uppercase;">`;
+  rollOptions.forEach(c => {
+    let id = c.type === 'print' ? 'print' : `lam-${c.layerNum}`;
+    let name = c.name.split(' ')[0];
+    let colIsKg = c.name.toUpperCase().includes('LLDPE') || c.name.toUpperCase() === 'PE';
+    let suffix = colIsKg ? '(KG)' : '(CUỘN)';
+    let selected = (selectedCol === c) ? 'selected' : '';
+    selectHTML += `<option value="${id}" ${selected}>${name} ${suffix}</option>`;
+  });
+  selectHTML += `</select>`;
+
+  const levels = isKgBase ? [200, 300, 400, 500, 600, 700] : [1, 2, 3, 4, 5, 6];
 
   // Helper: compute kg from meters for a given layer
   const calcKg = (layerMat, meters, width) => {
     if (!layerMat) return 0;
     return meters * width * layerMat.thickness * layerMat.density / 1000;
+  };
+
+  const getMetersFromKg = (layerMat, targetKg, width) => {
+    if (!layerMat || width <= 0) return 0;
+    return targetKg * 1000 / (width * layerMat.thickness * layerMat.density);
   };
 
   // Helper: Find precise quantity using a local binary search against calculate engine
@@ -1150,7 +1185,9 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters, getLayerData) {
       let mid = Math.floor((low + high) / 2);
       let res = calculate({ ...baseInput, quantity: mid });
       if (!res) return low; // fallback
-      let currentMeters = res.printMeters + res.printWaste;
+      
+      let layerData = getLayerData(res, selectedCol);
+      let currentMeters = layerData ? (layerData.meters + layerData.waste) : 0;
 
       if (currentMeters <= targetMeters) {
         bestQty = mid;
@@ -1163,9 +1200,19 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters, getLayerData) {
   };
 
   let rows = '';
-  rollLevels.forEach(numRolls => {
-    const availableMeters = numRolls * rollLen;
-    // Exactly quantify bags factoring in fixed + variable waste loops
+  levels.forEach(levelVal => {
+    let availableMeters = 0;
+    let displayHtml = '';
+
+    if (isKgBase) {
+      availableMeters = getMetersFromKg(selectedMat, levelVal, selectedData.width);
+      displayHtml = `<span style="font-weight:700;">${fmt(levelVal)} kg</span><br><span style="font-size:0.75rem;color:var(--muted);font-weight:400;">(${fmt(availableMeters, 0)} m)</span>`;
+    } else {
+      availableMeters = levelVal * rollLen;
+      const selectedKg = calcKg(selectedMat, availableMeters, selectedData.width);
+      displayHtml = `<span style="font-weight:700;">${levelVal} cuộn</span><br><span style="font-size:0.75rem;color:var(--muted);font-weight:400;">(${fmt(availableMeters, 0)}m - ${fmt(selectedKg, 1)} kg)</span>`;
+    }
+
     const estQty = findEstQtyForMeters(availableMeters);
     if (estQty <= 0) return;
 
@@ -1173,9 +1220,13 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters, getLayerData) {
     const res = calculate(inp);
     if (!res) return;
 
-    const isCurrent = numRolls === Math.ceil(totalPrintMeters / rollLen);
-
-    const printKg = calcKg(printMat, availableMeters, res.layers.print.width);
+    let isCurrent = false;
+    if (isKgBase) {
+      const currentKg = calcKg(selectedMat, totalSelectedMeters, selectedData.width);
+      isCurrent = (Math.ceil(currentKg / 100) * 100) === levelVal;
+    } else {
+      isCurrent = levelVal === Math.ceil(totalSelectedMeters / rollLen);
+    }
 
     // Build cells for other layers: meters + kg
     const otherCells = otherLayers.map(col => {
@@ -1187,9 +1238,8 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters, getLayerData) {
 
     rows += `
       <tr class="${isCurrent ? 'moq-highlight' : ''}">
-        <td style="font-weight:${isCurrent ? '700' : '400'}">${numRolls} cuộn<br><span style="font-size:0.75rem;color:var(--muted);font-weight:400;">(${fmt(availableMeters, 0)}m - ${fmt(printKg, 1)} kg)</span></td>
+        <td>${displayHtml}</td>
         <td style="font-weight:${isCurrent ? '700' : '400'}">${fmt(estQty)}</td>
-
         ${otherCells}
         <td style="font-weight:700;color:${isCurrent ? 'var(--accent)' : 'inherit'}">${fmt(res.finalPrice, 0)}</td>
         <td>${fmt(res.finalPrice * estQty / 1000000, 2)}tr</td>
@@ -1197,10 +1247,10 @@ function renderRollMOQ(r, baseInput, matCols, getLayerMeters, getLayerData) {
     `;
   });
 
-  const otherHeaders = otherLayers.map(col => `<th>${col.name}</th>`).join('');
+  const otherHeaders = otherLayers.map(col => `<th>${col.name.split(' ')[0]}</th>`).join('');
 
   document.getElementById('moq-roll-table').innerHTML = `
-    <tr><th>${printName} (cuộn)</th><th>SL túi</th>${otherHeaders}<th>Giá đề xuất</th><th>Tổng DT</th></tr>
+    <tr><th>${selectHTML}</th><th>SL túi</th>${otherHeaders}<th>Giá đề xuất</th><th>Tổng DT</th></tr>
     ${rows}
   `;
 }

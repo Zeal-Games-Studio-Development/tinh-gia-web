@@ -376,7 +376,7 @@
             <!-- SECTION: Phân Tích Chi Phí -->
             <div id="sect-cost" class="manager-section-anchor"></div>
             <div class="stat-grid" id="m-stats" style="margin-top:20px"></div>
-            <div class="card" style="margin-bottom:14px">
+            <div class="card" style="margin-bottom:14px; display:none;">
               <div class="card-title"><span class="icon">📊</span> Cơ cấu giá vốn sản xuất</div>
               <div class="cost-bar" id="m-costbar"></div>
               <div class="cost-legend" id="m-legend"></div>
@@ -384,11 +384,11 @@
                 <table class="data-table" id="m-cost-table" style="margin-top:14px"></table>
               </div>
             </div>
-            <div class="card" style="margin-bottom:14px">
+            <div class="card" style="margin-bottom:14px; display:none;">
               <div class="card-title"><span class="icon">📈</span> Phân tích lợi nhuận</div>
               <ul class="breakdown-list" id="m-profit"></ul>
             </div>
-            <div class="card">
+            <div class="card" style="display:none;">
               <div class="card-title"><span class="icon">💵</span> Chi phí phụ tổng</div>
               <div class="table-responsive">
                 <table class="data-table" id="m-extra-table"></table>
@@ -408,10 +408,6 @@
                 <table class="data-table" id="m-t-unified-table"></table>
               </div>
             </div>
-            <div class="card">
-              <div class="card-title"><span class="icon">⚖️</span> Trọng lượng & Vận chuyển</div>
-              <ul class="breakdown-list" id="m-t-weight"></ul>
-            </div>
 
             <!-- SECTION: MOQ Bảng Giá -->
             <div id="sect-moq" class="manager-section-anchor"></div>
@@ -425,8 +421,9 @@
                 <table class="moq-table" id="moq-table"></table>
               </div>
             </div>
+            <div id="sect-roll" class="manager-section-anchor"></div>
             <div class="card">
-              <div class="card-title"><span class="icon">🎞️</span> MOQ theo cuộn màng</div>
+              <div class="card-title"><span class="icon">🎞️</span> SỐ LƯỢNG THEO CUỘN MÀNG</div>
               <div class="info-box">
                 <span class="icon">💡</span>
                 Số lượng tối ưu theo cuộn màng tiêu chuẩn của lớp in. Giúp đặt hàng khớp cuộn, giảm hao hụt.
@@ -562,18 +559,25 @@
                 </div>
               </div>
 
+              <div id="sect-weight" class="manager-section-anchor"></div>
+              <div class="card" style="margin-top: 14px;">
+                <div class="card-title"><span class="icon">⚖️</span> Trọng lượng & Vận chuyển</div>
+                <ul class="breakdown-list" id="m-t-weight"></ul>
+              </div>
+
             </div>
 
           </div> <!-- End manager-content -->
 
           <!-- RIGHT: Floating TOC Sub-Menu -->
-          <div class="manager-toc" style="width: 200px; position: fixed; right: 20px; top: 80px; background: var(--surface); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 90;">
-            <div style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">Mục lục</div>
-            <a href="#sect-sale" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">1. Báo Giá Gợi Ý</a>
-            <a href="#sect-cost" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">2. Cơ Cấu Chi Phí</a>
-            <a href="#sect-tech" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">3. Thông Số Kỹ Thuật</a>
-            <a href="#sect-moq" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">4. Bảng MOQ</a>
-            <a href="#sect-quote" class="toc-link" style="display:none; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">5. Bảng Báo Giá</a>
+          <div class="manager-toc" style="width: 250px; position: fixed; right: 20px; top: 80px; background: var(--surface); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 90;">
+            <div style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">Mục lục các bảng</div>
+            <a href="#sect-sale" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">1. Bảng Báo Giá Gợi Ý</a>
+            <a href="#sect-tech" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">2. Bảng Đặc Tả Kỹ Thuật</a>
+            <a href="#sect-moq" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">3. Bảng Giá Theo MOQ</a>
+            <a href="#sect-roll" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">4. Bảng MOQ Cuộn Màng</a>
+            <a href="#sect-weight" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">5. Trọng Lượng & Vận Chuyển</a>
+            <a href="#sect-quote" class="toc-link" style="display:block; padding:8px 12px; margin-bottom:4px; text-decoration:none; color:var(--text); border-radius:6px; font-size:0.9rem; font-weight:600; background:var(--bg);">6. Bảng Báo Giá (Bản In)</a>
           </div>
 
         </div> <!-- End manager-layout -->

@@ -120,11 +120,15 @@ function calculate(input) {
   const costPerUnit = revenue / quantity;
 
   // ── 9. CHI PHÍ PHỤ / TÚI ──
-  const totalThickness = layer1.thickness
+  const rawThickness = layer1.thickness
     + (layer2 ? layer2.thickness : 0)
     + (layer3 ? layer3.thickness : 0)
     + (layer4 ? layer4.thickness : 0)
     + (layer5 ? layer5.thickness : 0);
+
+  const activeLayersCount = 1 + (layer2 ? 1 : 0) + (layer3 ? 1 : 0) + (layer4 ? 1 : 0) + (layer5 ? 1 : 0);
+  const addedMic = (activeLayersCount - 1) * 3;
+  const totalThickness = Math.round((rawThickness + addedMic) / 5) * 5;
 
   // Tổng tỉ trọng (g/m²)
   const layerGSM = (thk, dens) => (thk / 1000000) * (dens * 1000000);
