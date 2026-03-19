@@ -469,10 +469,7 @@ function autoCalcCylinder() {
     while (spreadWidth * nCalc + 0.1 < 0.7) {
       nCalc++;
     }
-    let calcLength = spreadWidth * nCalc + 0.1;
-    if (calcLength > 1.25) {
-      calcLength = 1.25; // max là 1250mm
-    }
+    const calcLength = spreadWidth * nCalc + 0.1;
     document.getElementById('cylLength').value = +calcLength.toFixed(3);
   } else {
     document.getElementById('cylLength').value = '';
