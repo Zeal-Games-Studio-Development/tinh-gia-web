@@ -1474,20 +1474,43 @@ function analyzeChotGia() {
 
   const r = currentResult;
   const diff = val - r.finalPrice;
-  const diffPercent = diff / r.finalPrice;
-  const totalDiff = diff * r.input.quantity;
-  const actualProfit = (val * r.input.quantity) - r.totalProductionCost - r.zipperTotal - r.boxTotal - r.shippingTotal;
-  const actualProfitRate = actualProfit / r.totalProductionCost;
+  const doanhThu = val * r.input.quantity;
+  const tongHoaHong = (r.commissionPerUnit || 0) * r.input.quantity;
+
+  const tongChiPhi = r.totalProductionCost 
+                   + (r.zipperTotal || 0) 
+                   + (r.tapeTotal || 0) 
+                   + (r.handleTotal || 0) 
+                   + (r.boxTotal || 0) 
+                   + (r.shippingTotal || 0) 
+                   + ((r.interestPerUnit || 0) * r.input.quantity);
+
+  const lnCongTy = doanhThu - tongChiPhi - tongHoaHong;
+
+  const pctLnCongTy = r.totalProductionCost > 0 ? (lnCongTy / r.totalProductionCost) : 0;
+  const pctHoaHong = r.costPerUnit > 0 ? (r.commissionPerUnit / r.costPerUnit) : 0;
 
   const cls = diff >= 0 ? 'positive' : 'negative';
   const icon = diff >= 0 ? '✅' : '⚠️';
 
   el.innerHTML = `
     <div class="chot-analysis ${cls}">
-      <div class="chot-row"><span class="chot-label">${icon} Chênh lệch / túi</span><span class="chot-value">${diff >= 0 ? '+' : ''}${fmt(diff, 1)} đ (${diff >= 0 ? '+' : ''}${(diffPercent * 100).toFixed(1)}%)</span></div>
-      <div class="chot-row"><span class="chot-label">Tổng chênh lệch</span><span class="chot-value">${diff >= 0 ? '+' : ''}${fmt(totalDiff)} đ</span></div>
-      <div class="chot-row"><span class="chot-label">LN thực tế (GV SX)</span><span class="chot-value">${fmtPercent(actualProfitRate)}</span></div>
-      <div class="chot-row"><span class="chot-label">Tổng LN thực tế</span><span class="chot-value">${fmt(actualProfit / 1000000, 2)} triệu</span></div>
+      <div class="chot-row">
+        <span class="chot-label">${icon} Chênh lệch / túi</span>
+        <span class="chot-value">${diff >= 0 ? '+' : ''}${fmt(diff, 1)} đ/túi</span>
+      </div>
+      <div class="chot-row" style="font-weight:700;">
+        <span class="chot-label">Doanh thu tổng</span>
+        <span class="chot-value">${fmt(val)} đ/túi × ${fmt(r.input.quantity)} túi = ${fmt(doanhThu)} đ</span>
+      </div>
+      <div class="chot-row">
+        <span class="chot-label">LN công ty (${fmtPercent(pctLnCongTy)})</span>
+        <span class="chot-value">${fmt(lnCongTy)} đ</span>
+      </div>
+      <div class="chot-row">
+        <span class="chot-label">% Hoa hồng (${fmtPercent(pctHoaHong)})</span>
+        <span class="chot-value">${fmt(tongHoaHong)} đ</span>
+      </div>
     </div>
   `;
 }
