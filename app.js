@@ -150,6 +150,8 @@ function initCollapsibleCards() {
   if (!resultArea) return;
 
   resultArea.querySelectorAll('.card').forEach((card, idx) => {
+    // Bỏ qua card đang ẩn — chúng được ẩn theo thiết kế, không cần collapsible
+    if (card.style.display === 'none') return;
     const titleEl = card.querySelector(':scope > .card-title');
     if (!titleEl) return;
 
@@ -929,7 +931,6 @@ function renderManagerView(r) {
 // ══════════════════════════════════════════════
 function renderTechView(r) {
   document.getElementById('t-structure').textContent = r.structureText;
-  document.getElementById('m-t-structure').textContent = r.structureText;
 
   const tStatsHTML = `
     <div class="stat-card accent"><div class="stat-label">Đầu Vào Khâu In</div><div class="stat-value">${fmt(r.printMeters + r.printWaste, 0)} m</div></div>
@@ -938,7 +939,6 @@ function renderTechView(r) {
     <div class="stat-card orange"><div class="stat-label">Khổ Màng NL</div><div class="stat-value">${fmt(r.input.spreadWidth * r.input.numImages + 0.02, 3)} m</div></div>
   `;
   document.getElementById('t-stats').innerHTML = tStatsHTML;
-  document.getElementById('m-t-stats').innerHTML = tStatsHTML;
 
   // ── Bảng gộp: Chi tiết sản xuất & nguyên liệu ──
   const uniRows = [];
