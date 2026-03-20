@@ -786,7 +786,7 @@ function renderSaleView(r) {
   const commissionPct = r.costPerUnit > 0 ? (r.commissionPerUnit / r.costPerUnit) : 0;
 
   document.getElementById('s-stats').innerHTML = `
-    <div class="stat-card green"><div class="stat-label">Lợi Nhuận</div><div class="stat-value" style="font-size:1.15rem">${fmt(r.profitAmount)}đ <span style="font-size:0.85rem">(${fmtPercent(r.profitRate)})</span></div></div>
+    <div class="stat-card green" style="position:relative"><div class="stat-label">Lợi Nhuận</div><div class="stat-value" style="font-size:1.15rem">${fmt(r.profitAmount)}đ <span style="font-size:0.85rem">(${fmtPercent(r.profitRate)})</span></div><div id="s-profit-card-notice"></div></div>
     <div class="stat-card cyan"><div class="stat-label">Doanh thu túi</div><div class="stat-value">${fmt(r.revenue)} đ</div></div>
     <div class="stat-card orange"><div class="stat-label">Giá Bán/Túi</div><div class="stat-value">${fmt(r.finalPrice, 0)} đ</div></div>
     <div class="stat-card pink"><div class="stat-label">Hoa hồng</div><div class="stat-value" style="font-size:1.15rem">${fmt(totalCommission)} đ <div style="font-size:0.85rem; font-weight:normal; margin-top:4px;">${fmt(r.commissionPerUnit, 1)} đ/túi (${fmtPercent(commissionPct)})</div></div></div>
@@ -1474,8 +1474,24 @@ function analyzeChotGia() {
 
   const r = currentResult;
   const diff = val - r.finalPrice;
+  if (diff === 0) { el.innerHTML = ''; return; }
+  
   const doanhThu = val * r.input.quantity;
-  const tongHoaHong = (r.commissionPerUnit || 0) * r.input.quantity;
+  
+  let newHoaHongPerUnit = (r.commissionPerUnit || 0) + diff;
+  const profitNoticeEl = document.getElementById('s-profit-card-notice');
+  if (newHoaHongPerUnit < 0) {
+    const profitDrop = Math.abs(newHoaHongPerUnit) * r.input.quantity;
+    const dropPct = r.profitAmount > 0 ? (profitDrop / r.profitAmount) : 0;
+    newHoaHongPerUnit = 0;
+    if (profitNoticeEl) {
+      profitNoticeEl.innerHTML = `<div style="color:#d9534f; font-size:0.85rem; font-weight:700; margin-top:8px;">⚠️ Giảm ${fmt(profitDrop)} đ (${fmtPercent(dropPct)}) LN so với đề xuất</div>`;
+    }
+  } else {
+    if (profitNoticeEl) profitNoticeEl.innerHTML = '';
+  }
+  
+  const tongHoaHong = newHoaHongPerUnit * r.input.quantity;
 
   const tongChiPhi = r.totalProductionCost 
                    + (r.zipperTotal || 0) 
@@ -1488,7 +1504,7 @@ function analyzeChotGia() {
   const lnCongTy = doanhThu - tongChiPhi - tongHoaHong;
 
   const pctLnCongTy = r.totalProductionCost > 0 ? (lnCongTy / r.totalProductionCost) : 0;
-  const pctHoaHong = r.costPerUnit > 0 ? (r.commissionPerUnit / r.costPerUnit) : 0;
+  const pctHoaHong = r.costPerUnit > 0 ? (newHoaHongPerUnit / r.costPerUnit) : 0;
 
   const cls = diff >= 0 ? 'positive' : 'negative';
   const icon = diff >= 0 ? '✅' : '⚠️';
@@ -1624,7 +1640,46 @@ function saveChotGia() {
     list[0].chotGia = val;
     localStorage.setItem('lts_history', JSON.stringify(list));
   }
-  showToast(`Đã lưu giá chốt: ${fmt(val)} đ/túi`, 'success');
+  
+  document.getElementById('s-price').innerHTML = `${fmt(val)} <span style="font-size:0.45em; font-weight:700; color:var(--green); vertical-align:middle; background:rgba(46,204,113,0.15); padding:4px 8px; border-radius:12px; margin-left:8px;">Giá chốt</span>`;
+  
+  // Re-calculate the 4 stat cards
+  const r = currentResult;
+  const diff = val - r.finalPrice;
+  const doanhThu = val * r.input.quantity;
+  
+  let newHoaHongPerUnit = (r.commissionPerUnit || 0) + diff;
+  let noticeHtml = '';
+  if (newHoaHongPerUnit < 0) {
+    const profitDrop = Math.abs(newHoaHongPerUnit) * r.input.quantity;
+    const dropPct = r.profitAmount > 0 ? (profitDrop / r.profitAmount) : 0;
+    newHoaHongPerUnit = 0;
+    noticeHtml = `<div style="color:#d9534f; font-size:0.85rem; font-weight:700; margin-top:8px;">⚠️ Giảm ${fmt(profitDrop)} đ (${fmtPercent(dropPct)}) LN so với đề xuất</div>`;
+  }
+  
+  const tongHoaHong = newHoaHongPerUnit * r.input.quantity;
+  const tongChiPhi = r.totalProductionCost 
+                   + (r.zipperTotal || 0) 
+                   + (r.tapeTotal || 0) 
+                   + (r.handleTotal || 0) 
+                   + (r.boxTotal || 0) 
+                   + (r.shippingTotal || 0) 
+                   + ((r.interestPerUnit || 0) * r.input.quantity);
+  const lnCongTy = doanhThu - tongChiPhi - tongHoaHong;
+  const pctLnCongTy = r.totalProductionCost > 0 ? (lnCongTy / r.totalProductionCost) : 0;
+  const pctHoaHong = r.costPerUnit > 0 ? (newHoaHongPerUnit / r.costPerUnit) : 0;
+
+  document.getElementById('s-stats').innerHTML = `
+    <div class="stat-card green" style="position:relative"><div class="stat-label">Lợi Nhuận</div><div class="stat-value" style="font-size:1.15rem">${fmt(lnCongTy)}đ <span style="font-size:0.85rem">(${fmtPercent(pctLnCongTy)})</span></div><div id="s-profit-card-notice">${noticeHtml}</div></div>
+    <div class="stat-card cyan"><div class="stat-label">Doanh thu túi</div><div class="stat-value">${fmt(doanhThu)} đ</div></div>
+    <div class="stat-card orange"><div class="stat-label">Giá Bán/Túi</div><div class="stat-value">${fmt(val, 0)} đ</div></div>
+    <div class="stat-card pink"><div class="stat-label">Hoa hồng</div><div class="stat-value" style="font-size:1.15rem">${fmt(tongHoaHong)} đ <div style="font-size:0.85rem; font-weight:normal; margin-top:4px;">${fmt(newHoaHongPerUnit, 1)} đ/túi (${fmtPercent(pctHoaHong)})</div></div></div>
+  `;
+
+  // Hide the green box since the price has been officially committed
+  document.getElementById('chotAnalysis').innerHTML = '';
+
+  showToast(`Đã thay thế Giá đề xuất bằng Giá chốt mới là ${fmt(val)} đ/túi`, 'success');
 }
 
 // ══════════════════════════════════════════════
