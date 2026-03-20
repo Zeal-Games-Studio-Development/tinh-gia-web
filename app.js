@@ -155,17 +155,14 @@ function initCollapsibleCards() {
     const titleEl = card.querySelector(':scope > .card-title');
     if (!titleEl) return;
 
-    // Assign stable ID dựa vào text của title
-    const cardKey = 'lts_card_' + (titleEl.textContent.trim().substring(0, 30).replace(/\s+/g, '_').replace(/[^\w]/g, '') || idx);
-    card.dataset.collapseKey = cardKey;
 
-    // Nếu đã xử lý rồi (re-render), chỉ cập nhật trạng thái
+
+    // Nếu đã xử lý rồi → tự đóng lại khi tính toán mới
     if (titleEl.classList.contains('collapsible')) {
       const body = card.querySelector(':scope > .card-body-collapsible');
       const arrow = titleEl.querySelector('.card-collapse-arrow');
-      const isCollapsed = localStorage.getItem(cardKey) === '0';
-      if (body) body.classList.toggle('open', !isCollapsed);
-      if (arrow) arrow.classList.toggle('open', !isCollapsed);
+      if (body) body.classList.remove('open');
+      if (arrow) arrow.classList.remove('open');
       return;
     }
 
@@ -192,16 +189,10 @@ function initCollapsibleCards() {
     siblings.forEach(s => wrapper.appendChild(s));
     card.appendChild(wrapper);
 
-    // Restore trạng thái từ localStorage (mặc định: mở)
-    const isCollapsed = localStorage.getItem(cardKey) === '0';
-    wrapper.classList.toggle('open', !isCollapsed);
-    arrow.classList.toggle('open', !isCollapsed);
-
-    // Gắn sự kiện click
+    // Mặc định: đóng. Click để mở/đóng — không lưu localStorage
     titleEl.addEventListener('click', () => {
       const isNowOpen = wrapper.classList.toggle('open');
       arrow.classList.toggle('open', isNowOpen);
-      localStorage.setItem(cardKey, isNowOpen ? '1' : '0');
     });
   });
 }
