@@ -648,7 +648,9 @@ function gatherInput() {
     metallicSurcharge: (document.getElementById('hasNhu').checked ? CONSTANTS.nhuPrice : 0)
       + (document.getElementById('hasMo').checked ? CONSTANTS.moPrice : 0),
     coverageRatio: (parseFloat(document.getElementById('coverage').value) || 100) / 100,
-    handleWeight: 0,
+    handleWeight: document.getElementById('hasHandle')?.checked ? CONSTANTS.handleWeight : 0,
+    zipperWeight: document.getElementById('hasZipper')?.checked ? CONSTANTS.zipperWeight : 0,
+    tapeWeight: document.getElementById('hasTape')?.checked ? CONSTANTS.tapeWeight : 0,
     hasZipper: hasZipper,
     hasTape: document.getElementById('hasTape')?.checked || false,
     hasHandle: document.getElementById('hasHandle')?.checked || false,
@@ -756,6 +758,15 @@ function renderSaleView(r) {
     bagStr = 'Màng cuộn';
   }
 
+  const cylPerUnit = r.cylinderCostPerUnit;
+  const numTr = r.input.numColors || 0;
+  const cylTotal = r.cylinderCost;
+
+  let cylinderInfoStr = '';
+  if (numTr > 0) {
+    cylinderInfoStr = `<div><strong>Trục in:</strong> D ${fmt(r.cylLength * 1000)} mm x CV ${fmt(r.cylCircum * 1000)} mm - ${fmt(cylPerUnit)} đ/trục * ${numTr} trục = ${fmt(cylTotal)} đ</div>`;
+  }
+
   document.getElementById('s-structure').innerHTML = `
     <div style="font-weight:600; color:var(--text); font-size:1.05rem; margin-bottom:12px;">${r.input.customer} — ${r.input.productName}</div>
     <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px 20px; font-size:0.9rem; margin:0 auto; max-width:600px;">
@@ -767,37 +778,35 @@ function renderSaleView(r) {
       <div><strong>Diện tích:</strong> ${fmtM2(r.bagArea)}</div>
       <div><strong>Trọng lượng:</strong> ${fmt(r.tareWeight, 2)} gr</div>
       <div><strong>Loại ${r.input.productType === 'mang' ? 'sản phẩm' : 'túi'}:</strong> ${bagStr}</div>
+      ${cylinderInfoStr}
     </div>
   `;
 
-  const cylPerUnit = r.cylinderCostPerUnit;
-  const numTr = r.input.numColors || 0;
-  const cylTotal = r.cylinderCost;
+  const totalCommission = r.commissionPerUnit * r.input.quantity;
+  const commissionPct = r.costPerUnit > 0 ? (r.commissionPerUnit / r.costPerUnit) : 0;
 
   document.getElementById('s-stats').innerHTML = `
     <div class="stat-card green"><div class="stat-label">Lợi Nhuận</div><div class="stat-value" style="font-size:1.15rem">${fmt(r.profitAmount)}đ <span style="font-size:0.85rem">(${fmtPercent(r.profitRate)})</span></div></div>
     <div class="stat-card cyan"><div class="stat-label">Doanh thu túi</div><div class="stat-value">${fmt(r.revenue)} đ</div></div>
     <div class="stat-card orange"><div class="stat-label">Giá Bán/Túi</div><div class="stat-value">${fmt(r.finalPrice, 0)} đ</div></div>
-    <div class="stat-card pink"><div class="stat-label">Trục in</div><div class="stat-value" style="font-size:1.15rem">${fmt(cylTotal)} đ</div></div>
+    <div class="stat-card pink"><div class="stat-label">Hoa hồng</div><div class="stat-value" style="font-size:1.15rem">${fmt(totalCommission)} đ <div style="font-size:0.85rem; font-weight:normal; margin-top:4px;">${fmt(r.commissionPerUnit, 1)} đ/túi (${fmtPercent(commissionPct)})</div></div></div>
   `;
 
-  const overviewItems = [
-    ['<strong style="color:var(--cyan)">DOANH THU TỔNG</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--cyan)">${fmt(r.revenue)} đ</span>`],
-    ['<strong style="color:var(--green)">LỢI NHUẬN XƯỞNG</strong>', `<span style="font-weight:700; font-size:1.05em; color:var(--green)">${fmt(r.profitAmount)} đ (${fmtPercent(r.profitRate)})</span>`],
-    ['<strong style="color:var(--pink)">GIÁ TRỤC IN</strong>', `<span style="font-weight:700; font-size:0.95em; color:var(--pink)">${fmt(cylPerUnit)} đ/trục × ${numTr} trục = <span style="font-size:1.1em">${fmt(cylTotal)} đ</span></span>`],
-  ];
-  document.getElementById('s-overview').innerHTML = overviewItems.map(([l, v]) =>
-    `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`
-  ).join('');
+
 
   const items = [
     [`Giá ban đầu (Vốn + ${fmtPercent(r.profitRate)} LN)`, fmt(r.costPerUnit, 1) + ' đ'],
-    ['Chi phí Zipper', fmt(r.zipperPerUnit, 1) + ' đ'],
+  ];
+  if (r.input.hasZipper) items.push(['Chi phí Zipper', fmt(r.zipperPerUnit, 1) + ' đ']);
+  if (r.input.hasTape) items.push(['Chi phí Băng keo', fmt(r.tapePerUnit, 1) + ' đ']);
+  if (r.input.hasHandle) items.push(['Chi phí Quai', fmt(r.handlePerUnit, 1) + ' đ']);
+  
+  items.push(
     ['Chi phí Thùng giấy', fmt(r.boxPerUnit, 1) + ' đ'],
     ['Chi phí Vận chuyển', fmt(r.shippingPerUnit, 1) + ' đ'],
     [`Lãi vay vốn (${fmtPercent(r.interestRate30)})`, fmt(r.interestPerUnit, 1) + ' đ'],
-    ['Hoa hồng kinh doanh', fmt(r.commissionPerUnit, 1) + ' đ'],
-  ];
+    ['Hoa hồng kinh doanh', fmt(r.commissionPerUnit, 1) + ' đ']
+  );
   document.getElementById('s-breakdown').innerHTML = items.map(([l, v]) =>
     `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`
   ).join('') + `<li class="bl-total"><span class="bl-label" style="color:var(--orange)">GIÁ BÁN ĐỀ XUẤT / TÚI</span><span class="bl-value" style="color:var(--orange)">${fmt(r.finalPrice, 0)} đ</span></li>`;
@@ -906,14 +915,18 @@ function renderManagerView(r) {
   ].map(([l, v]) => `<li><span class="bl-label">${l}</span><span class="bl-value">${v}</span></li>`).join('')
     + `<li class="bl-total"><span class="bl-label">GIÁ BÁN / TÚI</span><span class="bl-value">${fmtVND(r.finalPrice)}</span></li>`;
 
+  const commissionPct = r.costPerUnit > 0 ? (r.commissionPerUnit / r.costPerUnit) : 0;
+
   document.getElementById('m-extra-table').innerHTML = `
     <tr><th>Hạng mục</th><th>ĐVT</th><th class="num">Đơn giá</th><th class="num">SL</th><th class="num">Thành tiền</th><th class="num">Đ/Túi</th></tr>
     <tr><td>Trục in</td><td>bộ</td><td class="num">${fmt(r.cylinderCost)}</td><td class="num">1</td><td class="num">${fmt(r.cylinderCost)}</td><td class="num" style="color:var(--dim)">riêng</td></tr>
-    <tr><td>Zipper</td><td>m</td><td class="num">${r.input.hasZipper ? CONSTANTS.zipperPrice : 0}</td><td class="num">${r.input.hasZipper ? fmt(r.cutMeters + r.cutWaste, 0) : 0}</td><td class="num">${fmt(r.zipperTotal)}</td><td class="num">${fmt(r.zipperPerUnit, 1)}</td></tr>
+    ${r.input.hasZipper ? `<tr><td>Zipper</td><td>m</td><td class="num">${fmt(CONSTANTS.zipperPrice)}</td><td class="num">${fmt(r.cutMeters + r.cutWaste, 0)}</td><td class="num">${fmt(r.zipperTotal)}</td><td class="num">${fmt(r.zipperPerUnit, 1)}</td></tr>` : ''}
+    ${r.input.hasTape ? `<tr><td>Băng keo</td><td>m</td><td class="num">${fmt(CONSTANTS.tapePrice)}</td><td class="num">${fmt(r.cutMeters + r.cutWaste, 0)}</td><td class="num">${fmt(r.tapeTotal)}</td><td class="num">${fmt(r.tapePerUnit, 1)}</td></tr>` : ''}
+    ${r.input.hasHandle ? `<tr><td>Quai</td><td>cái</td><td class="num">${fmt(CONSTANTS.handlePrice)}</td><td class="num">${fmt(r.input.quantity, 0)}</td><td class="num">${fmt(r.handleTotal)}</td><td class="num">${fmt(r.handlePerUnit, 1)}</td></tr>` : ''}
     <tr><td>Thùng giấy <span style="color:var(--dim);font-size:0.75rem">(${fmt(r.actualBagsPerBox)} túi/thùng)</span></td><td>thùng</td><td class="num">${fmt(r.actualBoxPrice)}</td><td class="num">${fmt(r.numBoxes, 0)}</td><td class="num">${fmt(r.boxTotal)}</td><td class="num">${fmt(r.boxPerUnit, 1)}</td></tr>
     <tr><td>Vận chuyển <span style="color:var(--dim);font-size:0.75rem">(${fmt(r.actualShippingPerKm)}đ/km × ${fmt(r.actualShippingKm)}km)</span></td><td>tấn</td><td class="num">${fmt(r.shippingRate)}</td><td class="num">${fmt(r.tareWeight * r.input.quantity / 1000000, 3)}</td><td class="num">${fmt(r.shippingTotal)}</td><td class="num">${fmt(r.shippingPerUnit, 1)}</td></tr>
     <tr><td>Lãi vay (${r.paymentDays} ngày)</td><td>—</td><td class="num">${fmtPercent(r.interestRate30)}</td><td class="num">—</td><td class="num">${fmt(r.interestPerUnit * r.input.quantity)}</td><td class="num">${fmt(r.interestPerUnit, 1)}</td></tr>
-    <tr><td>Hoa hồng</td><td>—</td><td class="num">${fmtPercent(r.input.commissionRate)}</td><td class="num">—</td><td class="num">${fmt(r.commissionPerUnit * r.input.quantity)}</td><td class="num">${fmt(r.commissionPerUnit, 1)}</td></tr>
+    <tr><td>Hoa hồng</td><td>—</td><td class="num">${fmtPercent(commissionPct)}</td><td class="num">—</td><td class="num">${fmt(r.commissionPerUnit * r.input.quantity)}</td><td class="num">${fmt(r.commissionPerUnit, 1)}</td></tr>
   `;
 }
 
@@ -2057,8 +2070,11 @@ function updateCPSXConstants() {
   
   // Phụ kiện
   CONSTANTS.zipperPrice = parseDotFmt(document.getElementById('cfgZipperPrice')?.value) || 378;
+  CONSTANTS.zipperWeight = parseFloat(document.getElementById('cfgZipperWeight')?.value) || 0;
   CONSTANTS.tapePrice = parseDotFmt(document.getElementById('cfgTapePrice')?.value) || 200;
+  CONSTANTS.tapeWeight = parseFloat(document.getElementById('cfgTapeWeight')?.value) || 0;
   CONSTANTS.handlePrice = parseDotFmt(document.getElementById('cfgHandlePrice')?.value) || 650;
+  CONSTANTS.handleWeight = parseFloat(document.getElementById('cfgHandleWeight')?.value) || 0;
   updateCutPreviews();
   saveMaterialConfig();
   showToast('Đã cập nhật!', 'success');
@@ -2083,8 +2099,11 @@ function saveMaterialConfig() {
       nhuPrice: CONSTANTS.nhuPrice,
       moPrice: CONSTANTS.moPrice,
       zipperPrice: CONSTANTS.zipperPrice,
+      zipperWeight: CONSTANTS.zipperWeight,
       tapePrice: CONSTANTS.tapePrice,
-      handlePrice: CONSTANTS.handlePrice
+      tapeWeight: CONSTANTS.tapeWeight,
+      handlePrice: CONSTANTS.handlePrice,
+      handleWeight: CONSTANTS.handleWeight
     },
     printWaste: {
       colorSetup: CONSTANTS.colorSetup,
@@ -2130,13 +2149,25 @@ function loadMaterialConfig() {
         CONSTANTS.zipperPrice = data.cpsx.zipperPrice;
         const eZip = document.getElementById('cfgZipperPrice'); if (eZip) eZip.value = fmt(CONSTANTS.zipperPrice);
       }
+      if (data.cpsx.zipperWeight != null) {
+        CONSTANTS.zipperWeight = data.cpsx.zipperWeight;
+        const eZipW = document.getElementById('cfgZipperWeight'); if (eZipW) eZipW.value = CONSTANTS.zipperWeight;
+      }
       if (data.cpsx.tapePrice != null) {
         CONSTANTS.tapePrice = data.cpsx.tapePrice;
         const eTape = document.getElementById('cfgTapePrice'); if (eTape) eTape.value = fmt(CONSTANTS.tapePrice);
       }
+      if (data.cpsx.tapeWeight != null) {
+        CONSTANTS.tapeWeight = data.cpsx.tapeWeight;
+        const eTapeW = document.getElementById('cfgTapeWeight'); if (eTapeW) eTapeW.value = CONSTANTS.tapeWeight;
+      }
       if (data.cpsx.handlePrice != null) {
         CONSTANTS.handlePrice = data.cpsx.handlePrice;
         const eHand = document.getElementById('cfgHandlePrice'); if (eHand) eHand.value = fmt(CONSTANTS.handlePrice);
+      }
+      if (data.cpsx.handleWeight != null) {
+        CONSTANTS.handleWeight = data.cpsx.handleWeight;
+        const eHandW = document.getElementById('cfgHandleWeight'); if (eHandW) eHandW.value = CONSTANTS.handleWeight;
       }
     }
     // Backward compatibility & new property loads

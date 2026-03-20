@@ -5,8 +5,8 @@
 function calculate(input) {
   const {
     quantity, spreadWidth, cutStep, numColors, metallicSurcharge = 0,
-    handleWeight = 0, coverageRatio = 1, profitColumn = 2,
-    commissionRate = 0, hasZipper = false,
+    handleWeight = 0, zipperWeight = 0, tapeWeight = 0, coverageRatio = 1, profitColumn = 2,
+    commissionRate = 0, hasZipper = false, hasTape = false, hasHandle = false,
     layer1Id, layer2Id, layer3Id, layer4Id, layer5Id,
     shippingPerKm, shippingKm,
     boxPrice, bagsPerBox,
@@ -141,9 +141,19 @@ function calculate(input) {
     + (layer4 ? layerGSM(layer4.thickness, layer4.density) : 0)
     + (layer5 ? layerGSM(layer5.thickness, layer5.density) : 0);
 
-  // Zipper
+  // Các phụ kiện: Zipper, Băng keo, Quai
   const zipperTotal = hasZipper ? (cutMeters + cutWaste) * CONSTANTS.zipperPrice : 0;
-  const zipperPerUnit = zipperTotal / quantity;
+  const zipperPerUnit = quantity > 0 ? zipperTotal / quantity : 0;
+  const zipperWeightTotal = hasZipper ? (cutMeters + cutWaste) * zipperWeight : 0;
+
+  const tapeTotal = hasTape ? (cutMeters + cutWaste) * CONSTANTS.tapePrice : 0;
+  const tapePerUnit = quantity > 0 ? tapeTotal / quantity : 0;
+  const tapeWeightTotal = hasTape ? (cutMeters + cutWaste) * tapeWeight : 0;
+
+  const handleTotal = hasHandle ? quantity * CONSTANTS.handlePrice : 0;
+  const handlePerUnit = hasHandle ? CONSTANTS.handlePrice : 0;
+
+  const extraAccessoryWeightPerUnit = quantity > 0 ? (zipperWeightTotal + tapeWeightTotal) / quantity : 0;
 
   // Thùng giấy
   const actualBagsPerBox = bagsPerBox || 0;
@@ -153,7 +163,7 @@ function calculate(input) {
   const boxPerUnit = quantity > 0 ? boxTotal / quantity : 0;
 
   // Tare (gr/cái) = Tổng tỉ trọng (g/m²) × diện tích túi (m²)
-  const tareWeight = totalGSM * bagArea + handleWeight;
+  const tareWeight = totalGSM * bagArea + handleWeight + extraAccessoryWeightPerUnit;
 
   // Vận chuyển
   const actualShippingPerKm = shippingPerKm || 0;
@@ -178,7 +188,7 @@ function calculate(input) {
   }
 
   // ── 10. GIÁ CUỐI ──
-  const finalPrice = costPerUnit + zipperPerUnit + boxPerUnit
+  const finalPrice = costPerUnit + zipperPerUnit + tapePerUnit + handlePerUnit + boxPerUnit
     + shippingPerUnit + interestPerUnit + commissionPerUnit;
 
   // ── 11. TRỤC IN (manual input) ──
@@ -218,7 +228,7 @@ function calculate(input) {
     costPerUnit,
 
     // Phụ phí
-    zipperPerUnit, zipperTotal,
+    zipperPerUnit, zipperTotal, tapePerUnit, tapeTotal, handlePerUnit, handleTotal,
     boxPerUnit, boxTotal, actualBoxPrice, actualBagsPerBox, numBoxes,
     tareWeight, shippingPerUnit, shippingTotal, shippingRate,
     actualShippingPerKm, actualShippingKm,
