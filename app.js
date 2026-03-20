@@ -465,11 +465,13 @@ function autoCalcCylinder() {
   }
   
   if (!isNaN(spreadWidth) && spreadWidth > 0) {
+    // base = KT × SCH (số con hình) → rồi nhân thêm nCalc cho đến khi base*nCalc + 0.1 >= 0.7
+    const base = spreadWidth * n;
     let nCalc = 1;
-    while (spreadWidth * nCalc + 0.1 < 0.7) {
+    while (base * nCalc + 0.1 < 0.7) {
       nCalc++;
     }
-    const calcLength = spreadWidth * nCalc + 0.1;
+    const calcLength = base * nCalc + 0.1;
     document.getElementById('cylLength').value = +calcLength.toFixed(3);
   } else {
     document.getElementById('cylLength').value = '';
